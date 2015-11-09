@@ -41,6 +41,12 @@
                   codecs/metadata-response
                   timeout)))
 
+(defn str->bytes [s]
+  (-> s
+      .getBytes
+      bytes
+      vec))
+
 
 (defn produce-request [c correlation-id]
   (let [msg {:api-key :produce
@@ -49,15 +55,14 @@
              :client-id "greta"
              :required-acks 1
              :timeout 1000
-             :messages [{:topic "greta-tests"
-                         :messages [{:partition 1
-                                     :message-set [{:offset 0
-                                                    :message
-                                                    {:crc 123
-                                                     :magic-byte 0
-                                                     :attributes 0
-                                                     :key nil
-                                                     :value (.getBytes "hello!")}}]}]}]}]
+             :produce [{:topic "greta-tests"
+                        :messages [{:partition 0
+                                    :message-set [{:offset 0
+                                                   :message
+                                                   {:magic-byte :zero
+                                                    :attributes :none
+                                                    :key []
+                                                    :value (str->bytes "there!")}}]}]}]}]
     (make-request c msg 100)))
 
 (defn produce-response

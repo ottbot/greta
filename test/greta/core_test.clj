@@ -9,7 +9,8 @@
               @(metadata-response c 1))))))
 
 
-;; (deftest produce-test
-;;   (with-open [c @(connection)]
-;;     (is @(produce-request c 1))
-;;     (is (= 1 @(produce-response c 1)))))
+(deftest produce-test
+  (with-open [c @(connection)]
+    (is @(produce-request c 2))
+    (is (= 2 (:correlation-id
+              @(produce-response c 2))))))
