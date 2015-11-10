@@ -1,6 +1,9 @@
 # greta
 
-A Clojure library designed to ... well, that part is up to you.
+A Kafka client for Clojure projects. Implements the API introduced in
+Kafka 0.8 as an Aleph client.
+
+
 
 ## Usage
 
@@ -8,7 +11,6 @@ FIXME
 
 ## License
 
-Copyright © 2015 FIXME
+Copyright © 2015 Funding Circle
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the BSD 3-Clause License.
