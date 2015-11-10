@@ -1,0 +1,13 @@
+machine:
+  java:
+    version: oraclejdk8
+
+dependencies:
+  pre:
+    - if [ ! -e kafka_2.9.2-0.8.2.2 ]; then curl http://mirror.olnevhost.net/pub/apache/kafka/0.8.2.2/kafka_2.9.2-0.8.2.2.tgz | tar -xz; fi
+    - ./kafka_2.9.2-0.8.2.2/bin/kafka-server-start.sh ./kafka_2.9.2-0.8.2.2/config/server.properties:
+        background: true
+    - ./kafka_2.9.2-0.8.2.2/bin/zookeeper-server-start.sh ./kafka_2.9.2-0.8.2.2/config/zookeeper.properties:
+        background: true
+  cache_directories:
+    - kafka_2.9.2-0.8.2.2
