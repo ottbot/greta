@@ -57,8 +57,7 @@
            :magic-byte :zero
            :attributes :none
            :key (str->bytes "hello")
-           :value (str->bytes "there!")
-           }
+           :value (str->bytes "there!")}
 
         ms [{:offset 1
              :message m}]
@@ -82,7 +81,7 @@
     ; stored crc = 2766094955, computed crc = 2447778493)
     (testing "CRC calculation given Kafka computed value."
       (let [expected  2447778493]
-        (is (= expected (message-crc m)))))))
+        (is (= expected (message-body-crc m)))))))
 
 (deftest produce-response-test
   (let [p [{:parition 0
