@@ -53,8 +53,7 @@
     (is (round-trip? metadata-response m))))
 
 (deftest produce-request-test
-  (let [m {
-           :magic-byte :zero
+  (let [m {:magic-byte :zero
            :attributes :none
            :key (str->bytes "hello")
            :value (str->bytes "there!")}
@@ -78,7 +77,8 @@
     (is (round-trip? produce-request p))
     (is (round-trip? request r p))
 
-    ; stored crc = 2766094955, computed crc = 2447778493)
+    ; Brittle? Yes. This value is spat out by the kafka log given the
+    ; payload from above (computed crc = 2447778493)
     (testing "CRC calculation given Kafka computed value."
       (let [expected  2447778493]
         (is (= expected (message-body-crc m)))))))
@@ -94,3 +94,42 @@
 
     (is (round-trip? partition-results p))
     (is (round-trip? produce-response m))))
+
+(deftest fetch-request-test
+  (let [f {:topic "greta-tests"
+           :messages [{:partition 0
+                       :fetch-offset 0
+                       :max-bytes 64000}]}
+
+        fr {:api-version 0
+            :correlation-id 1
+            :client-id "greta-test"
+            :replica-id 1
+            :max-wait-time 1000
+            :min-bytes 64
+            :fetch [f]}
+
+        r (conj {:api-key :fetch} fr)]
+
+    (is (round-trip? fetch f))
+    (is (round-trip? fetch-request fr))
+    (is (round-trip? request r fr))))
+
+(deftest fetch-response-test
+  (let [ms {:offset 1
+              :message {:magic-byte :zero
+                        :attributes :none
+                        :key (str->bytes "hello")
+                        :value (str->bytes "there!")}}
+
+        fm {:partition 1
+            :error-code 0
+            :highwater-mark-offset 0
+            :message-set [ms]}
+
+        fr {:correlation-id 1
+            :fetch [{:topic-name "greta-tests"
+                     :messages [fm]}]}]
+
+    (is (round-trip? fetched-messages fm))
+    (is (round-trip? fetch-response fr))))
