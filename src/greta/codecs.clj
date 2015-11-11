@@ -1,6 +1,5 @@
 (ns greta.codecs
-  (:require [byte-streams :as bs]
-            [gloss.core :refer :all]
+  (:require [gloss.core :refer :all]
             [gloss.io :as io]))
 
 (defcodec sized-string
@@ -38,7 +37,7 @@
 
 (defn message-body-crc [x]
   (crc
-   (bs/to-byte-array
+   (io/contiguous
     (io/encode message-body x))))
 
 (defcodec message
@@ -115,12 +114,13 @@
                                           message-set)))
 
 (defcodec fetch-response
-  (ordered-map
-   :correlation-id :int32-be
-   :fetch (repeated
-           (ordered-map
-            :topic-name sized-string
-            :messages (repeated fetched-messages)))))
+  (finite-frame :int32-be
+                (ordered-map
+                 :correlation-id :int32-be
+                 :fetch (repeated
+                         (ordered-map
+                          :topic-name sized-string
+                          :messages (repeated fetched-messages))))))
 
 (defcodec partition-results
   (repeated

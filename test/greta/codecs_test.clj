@@ -99,7 +99,7 @@
   (let [f {:topic "greta-tests"
            :messages [{:partition 0
                        :fetch-offset 0
-                       :max-bytes 64000}]}
+                       :max-bytes 640}]}
 
         fr {:api-version 0
             :correlation-id 1
@@ -130,6 +130,7 @@
         fr {:correlation-id 1
             :fetch [{:topic-name "greta-tests"
                      :messages [fm]}]}]
+
 
     (is (round-trip? fetched-messages fm))
     (is (round-trip? fetch-response fr))))
