@@ -11,8 +11,8 @@
 
 (defcodec api-key
   (enum :int16 {:metadata 3
-                   :produce 0
-                   :fetch 1}))
+                :produce 0
+                :fetch 1}))
 
 (defcodec magic-byte
   (enum :byte {:zero 0}))

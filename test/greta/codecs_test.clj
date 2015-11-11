@@ -1,5 +1,6 @@
 (ns greta.codecs-test
   (:require [greta.codecs :refer :all]
+            [greta.core :refer [str->bytes]]
             [clojure.test :refer :all]
             [gloss.io :as io]))
 
