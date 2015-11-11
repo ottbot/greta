@@ -44,6 +44,7 @@
       (is (= cid (:correlation-id
                 @(s/take! c)))))))
 
+
 (deftest fetch-test
   (let [cid 3
         msg {:api-key :fetch

@@ -3,11 +3,6 @@
             [clojure.test :refer :all]
             [gloss.io :as io]))
 
-(defn str->bytes [s]
-  (-> s
-      .getBytes
-      bytes
-      vec))
 
 (defn round-trip?
   ([c m] (round-trip? c m m))
