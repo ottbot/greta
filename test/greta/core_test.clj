@@ -54,13 +54,14 @@
              :replica-id -1
              :max-wait-time 1000
              :min-bytes 10
-             :fetch [{:topic "greta-tests"
+             :topics [{:topic "greta-tests"
                       :messages [{:partition 0
                                   :fetch-offset 0
                                   :max-bytes 10240}]}]}]
 
     (with-open [c @(fetch-client)]
       (is @(s/put! c msg))
-      (is (= cid
-             (:correlation-id
-              @(s/try-take! c ::drained 1000 ::timeout)))))))
+      (is (not-empty
+           (get-in
+            @(s/try-take! c ::drained 1000 ::timeout)
+            [:topics 0 :messages]))))))

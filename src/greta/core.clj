@@ -2,6 +2,7 @@
   (:require [aleph.tcp :as tcp]
             [gloss.io :as io]
             [greta.codecs :as codecs]
+            [greta.codecs.fetch :as fetch-codecs]
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
@@ -39,8 +40,8 @@
 
 (defn fetch-client []
   (client "localhost" 9092
-          codecs/request
-          codecs/fetch-response))
+          fetch-codecs/request
+          fetch-codecs/response))
 
 (defn str->bytes [s]
   (-> s
