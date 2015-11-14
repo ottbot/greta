@@ -1,7 +1,6 @@
 (ns greta.core-test
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
-            [greta.codecs :as codecs]
             [greta.core :refer :all]
             [manifold.stream :as s]))
 

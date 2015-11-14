@@ -1,16 +1,9 @@
-(ns greta.codecs-test
-  (:require [greta.codecs :refer :all]
-            [greta.core :refer [str->bytes]]
-            [clojure.test :refer :all]
-            [gloss.io :as io]))
-
-
-(defn round-trip?
-  ([e m] (round-trip? e e m))
-  ([e d m]
-   (= m (->> m
-             (io/encode e)
-             (io/decode d)))))
+(ns greta.codecs.produce-test
+  (:require [clojure.test :refer :all]
+            [gloss.io :as io]
+            [greta.codecs.produce :refer :all]
+            [greta.codecs.core-test :refer [round-trip?]]
+            [greta.core :refer [str->bytes]]))
 
 
 (deftest produce-request-test
@@ -22,21 +15,20 @@
         ms [{:offset 1
              :message m}]
 
-        p {:api-version 0
+        r {:api-key :produce
+           :api-version 0
            :correlation-id 1
            :client-id "greta-test"
            :required-acks 1
            :timeout 1000
            :produce [{:topic "greta-tests"
                        :messages [{:partition 0
-                                   :message-set ms}]}]}
-
-        r (conj {:api-key :produce} p)]
+                                   :message-set ms}]}]}]
 
     (is (round-trip? message m))
     (is (round-trip? message-set ms))
-    (is (round-trip? produce-request p))
-    ;(is (round-trip? request r p))
+    (is (round-trip? request r))
+
 
     ;; Brittle? Yes. This value is spat out by the kafka log given the
     ;; payload from above (computed crc = 2447778493)
@@ -45,13 +37,10 @@
         (is (= expected (message-body-crc m)))))))
 
 (deftest produce-response-test
-  (let [p [{:parition 0
-            :offset 123
-            :error-code 0}]
-
-        m {:correlation-id 1
+  (let [m {:correlation-id 1
            :produce [{:topic "greta-tests"
-                      :results p}]}]
+                      :results [{:parition 0
+                                 :offset 123
+                                 :error-code 0}]}]}]
 
-    (is (round-trip? partition-results p))
-    (is (round-trip? produce-response m))))
+    (is (round-trip? response m))))

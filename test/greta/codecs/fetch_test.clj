@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
             [greta.codecs.fetch :refer :all]
-            [greta.codecs-test :refer [round-trip?]]
+            [greta.codecs.core-test :refer [round-trip?]]
             [greta.core :refer [str->bytes]]))
 
 (deftest fetch-request-test

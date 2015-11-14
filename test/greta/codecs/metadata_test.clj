@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
             [greta.codecs.metadata :refer :all]
-            [greta.codecs-test :refer [round-trip?]]))
+            [greta.codecs.core-test :refer [round-trip?]]))
 
 
 (deftest metadata-request-test

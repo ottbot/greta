@@ -1,8 +1,9 @@
 (ns greta.core
   (:require [aleph.tcp :as tcp]
             [gloss.io :as io]
-            [greta.codecs :as codecs]
             [greta.codecs.fetch :as fetch-codecs]
+            [greta.codecs.metadata :as metadata-codecs]
+            [greta.codecs.produce :as produce-codecs]
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
@@ -26,23 +27,25 @@
                     encoder
                     decoder)))
 
-(defn raw-client []
-  (tcp/client {:host "localhost"
-               :port 9092}))
 
+;; TODO dry
 (defn metadata-client []
   (client "localhost" 9092
-          codecs/request codecs/metadata-response))
+          metadata-codecs/request
+          metadata-codecs/response))
 
 (defn produce-client []
   (client "localhost" 9092
-          codecs/request codecs/produce-response))
+          produce-codecs/request
+          produce-codecs/response))
 
 (defn fetch-client []
   (client "localhost" 9092
           fetch-codecs/request
           fetch-codecs/response))
 
+
+;; TODO make serde protocol.. provide default!
 (defn str->bytes [s]
   (-> s
       .getBytes
