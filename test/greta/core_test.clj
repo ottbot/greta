@@ -1,6 +1,9 @@
 (ns greta.core-test
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
+            [greta.codecs.fetch :as fetch-codecs]
+            [greta.codecs.metadata :as metadata-codecs]
+            [greta.codecs.produce :as produce-codecs]
             [greta.core :refer :all]
             [manifold.stream :as s]))
 
@@ -12,7 +15,9 @@
              :client-id "greta"
              :topics []}]
 
-    (with-open [c @(metadata-client)]
+    (with-open [c @(client "localhost" 9092
+                          metadata-codecs/request
+                          metadata-codecs/response)]
       (is @(s/put! c msg))
       (is (= cid (:correlation-id
                   @(s/take! c)))))))
@@ -38,7 +43,9 @@
              :produce [{:topic "greta-tests"
                         :messages [ms]}]}]
 
-    (with-open [c @(produce-client)]
+    (with-open [c @(client "localhost" 9092
+                           produce-codecs/request
+                           produce-codecs/response)]
       (is @(s/put! c msg))
       (is (= cid (:correlation-id
                 @(s/take! c)))))))
@@ -58,7 +65,9 @@
                                   :fetch-offset 0
                                   :max-bytes 10240}]}]}]
 
-    (with-open [c @(fetch-client)]
+    (with-open [c @(client "localhost" 9092
+                           fetch-codecs/request
+                           fetch-codecs/response)]
       (is @(s/put! c msg))
       (is (not-empty
            (get-in
