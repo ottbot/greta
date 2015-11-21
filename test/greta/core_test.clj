@@ -3,27 +3,10 @@
             [gloss.io :as io]
             [greta.codecs.core :as c]
             [greta.codecs.fetch :as fetch-codecs]
-            [greta.codecs.metadata :as metadata-codecs]
             [greta.codecs.offset :as offset-codecs]
             [greta.codecs.produce :as produce-codecs]
             [greta.core :refer :all]
             [manifold.stream :as s]))
-
-
-(deftest metadata-test
-  (let [cid 1
-        msg {:api-key :metadata
-             :api-version 0
-             :correlation-id cid
-             :client-id "greta"
-             :topics []}]
-
-    (with-open [c @(client "localhost" 9092
-                          metadata-codecs/request
-                          metadata-codecs/response)]
-      (is @(s/put! c msg))
-      (is (= cid (:correlation-id
-                  @(s/take! c)))))))
 
 
 (deftest produce-test
@@ -86,7 +69,7 @@
              :api-version 0
              :correlation-id cid
              :client-id "greta-tests"
-             :replica-id 0
+             :replica-id -1
              :topics [{:topic "greta-tests"
                        :partitions [{:partition 0
                                      :time -2
