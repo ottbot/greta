@@ -4,6 +4,7 @@
             [greta.codecs.core :as c]
             [greta.codecs.fetch :as fetch-codecs]
             [greta.codecs.metadata :as metadata-codecs]
+            [greta.codecs.offset :as offset-codecs]
             [greta.codecs.produce :as produce-codecs]
             [greta.core :refer :all]
             [manifold.stream :as s]))
@@ -76,3 +77,25 @@
            (get-in
             @(s/try-take! c ::drained 1000 ::timeout)
             [:topics 0 :messages]))))))
+
+
+(deftest offset-test
+  (let [cid 4
+
+        msg {:api-key :offset
+             :api-version 0
+             :correlation-id cid
+             :client-id "greta-tests"
+             :replica-id 0
+             :topics [{:topic "greta-tests"
+                       :partitions [{:partition 0
+                                     :time -2
+                                     :max-number-of-offsets 100}]}]}]
+
+    (with-open [c @(client "localhost" 9092
+                           offset-codecs/request
+                           offset-codecs/response)]
+      (is @(s/put! c msg))
+      (is (= cid
+             (:correlation-id
+              @(s/take! c)))))))
