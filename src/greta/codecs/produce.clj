@@ -1,6 +1,5 @@
 (ns greta.codecs.produce
-  (:require [gloss.core.protocols :as p]
-            [gloss.core :refer :all]
+  (:require [gloss.core :refer :all]
             [gloss.io :as io]
             [greta.codecs.core :as c]))
 
