@@ -1,9 +1,9 @@
 (ns greta.codecs.fetch-test
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
-            [greta.codecs.fetch :refer :all]
+            [greta.codecs.core :as c]
             [greta.codecs.core-test :refer [round-trip?]]
-            [greta.core :refer [str->bytes]]))
+            [greta.codecs.fetch :refer :all]))
 
 (deftest fetch-request-test
   (let [f {:topic "greta-tests"
@@ -29,8 +29,8 @@
             :crc 102121
             :magic-byte :zero
             :attributes :none
-            :key (str->bytes "hello")
-            :value (str->bytes "there!")}
+            :key "hello"
+            :value "there!"}
 
         fm {:partition 1
             :error-code 0
@@ -39,12 +39,12 @@
 
         fr {:correlation-id 1
             :topics [{:topic-name "greta-tests"
-                     :messages [fm]}]}]
+                      :messages [fm]}]}]
 
 
-    (is (round-trip? fixed-size-messages
-                     optimized-messages
+    (is (round-trip? (fixed-size-messages (c/string-serde))
+                     (optimized-messages (c/string-serde))
                      fm))
 
-    (is (round-trip? fixed-size-response
-                     response fr))))
+    (is (round-trip? (fixed-size-response (c/string-serde))
+                     (response (c/string-serde)) fr))))

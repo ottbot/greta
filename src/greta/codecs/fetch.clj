@@ -26,26 +26,32 @@
     :topics (repeated fetch-topic))))
 
 
-(defcodec message-set
-  (ordered-map
-   :offset :int64
-   :size :int32
-   :crc :uint32
-   :magic-byte c/magic-byte
-   :attributes c/compression
-   :key c/sized-bytes
-   :value c/sized-bytes))
+(defn message-set [serde]
+  (compile-frame
+   (ordered-map
+    :offset :int64
+    :size :int32
+    :crc :uint32
+    :magic-byte c/magic-byte
+    :attributes c/compression
+    :key c/sized-bytes
+    :value c/sized-bytes)
+   (partial c/serialize serde)
+   (partial c/deserialize serde)))
 
-(let [codec message-set
-      codec-header (compile-frame [:int64 :int32])
-      read-codec-header #(p/read-bytes codec-header %)
-      hsize (sizeof codec-header)]
 
-  (defn unterminated-message-set
-    ([max-bytes]
-     (unterminated-message-set max-bytes []))
 
-    ([max-bytes messages]
+(defn unterminated-message-set
+  "Only a bit nasty"
+  ([serde max-bytes]
+   (unterminated-message-set serde max-bytes []))
+
+  ([serde max-bytes messages]
+   (let [codec (message-set serde)
+         codec-header (compile-frame [:int64 :int32])
+         read-codec-header #(p/read-bytes codec-header %)
+         hsize (sizeof codec-header)]
+
      (reify
        p/Reader
        (read-bytes [_ buf-seq]
@@ -55,6 +61,7 @@
                 tot 0]
 
            (let [[success msg r] (p/read-bytes codec bs)]
+
              (if success
 
                (recur (conj messages msg)
@@ -81,41 +88,50 @@
          (throw (Exception. "Write not implmeneted.")))))))
 
 
-(defcodec optimized-messages
-  (ordered-map :partition :int32
-               :error-code :int16
-               :highwater-mark-offset :int64
-               :message-set (header :int32
-                                    unterminated-message-set
-                                    identity)))
+(defn optimized-messages [s]
+  (compile-frame
+   (ordered-map :partition :int32
+                :error-code :int16
+                :highwater-mark-offset :int64
+                :message-set (header :int32
+                                     (partial unterminated-message-set s)
+                                     identity))))
 
-(defcodec response
-  (finite-frame :int32
-   (ordered-map
-    :correlation-id :int32
-    :topics (repeated
-             (ordered-map
-              :topic-name c/sized-string
-              :messages (repeated optimized-messages))))))
+
+(defn response [serde]
+  (compile-frame
+   (finite-frame
+    :int32
+    (ordered-map
+     :correlation-id :int32
+     :topics (repeated
+              (ordered-map
+               :topic-name c/sized-string
+               :messages (repeated (optimized-messages serde))))))))
 
 
 
 ;; TODO: Implement Writer for unterminated-message-set, then we don't
 ;; need these for testing!
 
-(defcodec fixed-size-messages
-  (ordered-map :partition :int32
-               :error-code :int16
-               :highwater-mark-offset :int64
-               :message-set (finite-frame :int32
-                                          (repeated message-set
-                                                    :prefix :none))))
+(defn fixed-size-messages [s]
+  (compile-frame
+   (ordered-map
+    :partition :int32
+    :error-code :int16
+    :highwater-mark-offset :int64
+    :message-set (finite-frame :int32
+                               (repeated (message-set s)
+                                         :prefix :none)))))
 
-(defcodec fixed-size-response
-  (finite-frame :int32
-                (ordered-map
-                 :correlation-id :int32
-                 :topics (repeated
-                         (ordered-map
-                          :topic-name c/sized-string
-                          :messages (repeated fixed-size-messages))))))
+
+(defn fixed-size-response [s]
+  (compile-frame
+   (finite-frame
+    :int32
+    (ordered-map
+     :correlation-id :int32
+     :topics (repeated
+              (ordered-map
+               :topic-name c/sized-string
+               :messages (repeated (fixed-size-messages s))))))))

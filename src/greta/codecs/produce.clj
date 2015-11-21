@@ -3,52 +3,61 @@
             [gloss.io :as io]
             [greta.codecs.core :as c]))
 
-(defcodec message-body
-  (ordered-map
-   :magic-byte c/magic-byte
-   :attributes c/compression
-   :key c/sized-bytes
-   :value c/sized-bytes))
 
-(defn message-body-crc [x]
+(defn message-body [serde]
+  (compile-frame
+   (ordered-map
+    :magic-byte c/magic-byte
+    :attributes c/compression
+    :key c/sized-bytes
+    :value c/sized-bytes)
+   (partial c/serialize serde)
+   (partial c/deserialize serde)))
+
+(defn message-body-crc [serde x]
   (c/crc
    (io/contiguous
-    (io/encode message-body x))))
+    (io/encode (message-body serde) x))))
 
 
-(defcodec message
-  (header :uint32
-          (fn [_]
-            message-body)
-          message-body-crc))
+(defn message [s]
+  (compile-frame
+   (header :uint32
+           (fn [_]
+             (message-body s))
+           (partial message-body-crc s))))
 
-(defcodec message-set
-  (repeated
-   (ordered-map :offset :int64
-                :message (finite-frame :int32
-                                       message))
-   :prefix :none))
+(defn message-set [s]
+  (compile-frame
+   (repeated
+    (ordered-map :offset :int64
+                 :message (finite-frame :int32
+                                        (message s)))
+    :prefix :none)))
 
-(defcodec produce
-  (ordered-map
-   :topic c/sized-string
-   :messages (repeated
-              (ordered-map
-               :partition :int32
-               :message-set (finite-frame
-                             :int32
-                             message-set)))))
-
-(defcodec request
-  (finite-frame :int32
+(defn produce [s]
+  (compile-frame
    (ordered-map
-    :api-key c/api-key
-    :api-version :int16
-    :correlation-id :int32
-    :client-id c/sized-string
-    :required-acks :int16
-    :timeout :int32
-    :produce (repeated produce))))
+    :topic c/sized-string
+    :messages (repeated
+               (ordered-map
+                :partition :int32
+                :message-set (finite-frame
+                              :int32
+                              (message-set s)))))))
+
+(defn request [serde]
+  (compile-frame
+   (finite-frame
+    :int32
+    (ordered-map
+     :api-key c/api-key
+     :api-version :int16
+     :correlation-id :int32
+     :client-id c/sized-string
+     :required-acks :int16
+     :timeout :int32
+     :produce (repeated (produce serde))))))
 
 
 (defcodec partition-results
