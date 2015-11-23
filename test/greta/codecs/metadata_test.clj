@@ -27,7 +27,7 @@
 
         t [{:topic-error-code 0
             :topic-name "greata-tests"
-            :parition-metadata p}]
+            :partition-metadata p}]
 
         m {:correlation-id 1
            :brokers b

@@ -30,7 +30,7 @@
   (repeated
    (ordered-map :topic-error-code :int16
                 :topic-name c/sized-string
-                :parition-metadata partition-metadata)))
+                :partition-metadata partition-metadata)))
 
 (defcodec response
   (finite-frame :int32

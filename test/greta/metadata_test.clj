@@ -15,3 +15,11 @@
       (is @(s/put! c msg))
       (is (= cid (:correlation-id
                   @(s/take! c)))))))
+
+(deftest topic-parition-leader-test
+
+  (is (= {:node-id 0
+          :host "localhost.localdomain"
+          :port 9092}
+
+         @(topic-partition-leader "localhost" 9092 "greta-tests" 0))))
