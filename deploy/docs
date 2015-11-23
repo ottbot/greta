@@ -1,0 +1,62 @@
+#!/bin/bash
+
+GITHUB_USER="fundingcircle"
+PROJECT="greta"
+REPO="git@github.com:$GITHUB_USER/$PROJECT.git"
+
+DOC_OUTPUT=target/doc
+PROG=$(basename $0)
+
+help () {
+    echo ""
+    echo "Usage: $PROG <cmd>"
+    echo ""
+    echo "Commands: "
+    echo "   generate  Generate API Docs"
+    echo "   commit    Commit docs to gh-pages branch"
+    echo "   publish   Publish API Docs to github pages"
+}
+
+setup () {
+    rm -rf $DOC_OUTPUT && mkdir $DOC_OUTPUT
+    git clone $REPO $DOC_OUTPUT
+
+    cd $DOC_OUTPUT
+      git symbolic-ref HEAD refs/heads/gh-pages
+      rm .git/index
+      git clean -fdx
+    cd -
+}
+
+sub_generate () {
+    setup
+    lein codox && open $DOC_OUTPUT/index.html
+}
+
+sub_commit () {
+    cd $DOC_OUTPUT
+      git add .
+      git commit -am "$1"
+    cd -
+}
+
+sub_publish () {
+    cd $DOC_OUTPUT
+      git push -u origin gh-pages
+    cd -
+}
+
+
+cmd=$1
+case $cmd in
+    "" | "-h" | "--help")
+        help
+        ;;
+    *)
+        shift
+        sub_${cmd} $@
+        if [ $? = 127 ]; then
+            echo "Error: $sub is not a valid command" >&2
+            echo "       Run $PROG --help for known commands"
+        fi
+esac
