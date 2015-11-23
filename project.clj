@@ -6,4 +6,6 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [aleph "0.4.1-beta2"]
-                 [gloss "0.2.5"]])
+                 [gloss "0.2.5"]]
+
+  :plugins [[lein-codox "0.9.0"]])
