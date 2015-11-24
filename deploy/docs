@@ -12,7 +12,7 @@ help () {
     echo "Usage: $PROG <cmd>"
     echo ""
     echo "Commands: "
-    echo "   generate  Generate API Docs"
+    echo "   generate  Generate API Documentation"
     echo "   commit    Commit docs to gh-pages branch"
     echo "   publish   Publish API Docs to github pages"
 }

@@ -16,3 +16,11 @@ dependencies:
         background: true
   cache_directories:
     - kafka_2.9.2-0.8.2.2
+
+deployment:
+  docs:
+    branch: master
+    commands:
+      - deploy/docs generate
+      - deploy/docs commit "Update Documentation: $CIRCLE_SHA1"
+      - deploy/docs publish
