@@ -42,7 +42,7 @@ sub_commit () {
 
 sub_publish () {
     cd $DOC_OUTPUT
-      git push -u origin gh-pages
+      git push -f -u origin gh-pages
     cd -
 }
 
