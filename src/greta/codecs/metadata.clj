@@ -1,6 +1,5 @@
 (ns greta.codecs.metadata
   (:require [gloss.core :refer :all]
-            [gloss.core.protocols :as p]
             [greta.codecs.core :as c]))
 
 (defcodec request

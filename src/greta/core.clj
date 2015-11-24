@@ -23,14 +23,3 @@
            (partial protocol-stream
                     encoder
                     decoder)))
-
-
-
-
-;; TODO make serde protocol.. implement string/byte array as a
-;; default!
-(defn str->bytes [s]
-  (-> s
-      .getBytes
-      bytes
-      vec))

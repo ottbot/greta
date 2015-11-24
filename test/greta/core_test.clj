@@ -1,11 +1,13 @@
 (ns greta.core-test
   (:require [clojure.test :refer :all]
             [gloss.io :as io]
+            [greta.codecs.core :as c]
             [greta.codecs.fetch :as fetch-codecs]
             [greta.codecs.metadata :as metadata-codecs]
             [greta.codecs.produce :as produce-codecs]
             [greta.core :refer :all]
             [manifold.stream :as s]))
+
 
 (deftest metadata-test
   (let [cid 1
@@ -31,8 +33,8 @@
                            :message
                            {:magic-byte :zero
                             :attributes :none
-                            :key []
-                            :value (str->bytes "see you on the other side!")}}]}
+                            :key ""
+                            :value "see you on the other side!"}}]}
 
         msg {:api-key :produce
              :api-version 0
@@ -44,8 +46,9 @@
                         :messages [ms]}]}]
 
     (with-open [c @(client "localhost" 9092
-                           produce-codecs/request
-                           produce-codecs/response)]
+                           (produce-codecs/request (c/string-serde))
+                           produce-codecs/response )]
+
       (is @(s/put! c msg))
       (is (= cid (:correlation-id
                 @(s/take! c)))))))
@@ -67,7 +70,7 @@
 
     (with-open [c @(client "localhost" 9092
                            fetch-codecs/request
-                           fetch-codecs/response)]
+                           (fetch-codecs/response (c/string-serde)))]
       (is @(s/put! c msg))
       (is (not-empty
            (get-in
