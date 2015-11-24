@@ -5,7 +5,7 @@
             [greta.codecs.core-test :refer [round-trip?]]
             [greta.codecs.fetch :refer :all]))
 
-(deftest fetch-request-test
+(deftest request-test
   (let [f {:topic "greta-tests"
            :messages [{:partition 0
                        :fetch-offset 0
@@ -23,7 +23,7 @@
     (is (round-trip? fetch-topic f))
     (is (round-trip? request r))))
 
-(deftest fetch-response-test
+(deftest response-test
   (let [ms {:offset 1
             :size 1000
             :crc 102121

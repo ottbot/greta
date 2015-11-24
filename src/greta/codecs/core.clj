@@ -12,7 +12,8 @@
   (enum :int16 {:metadata 3
                 :produce 0
                 :fetch 1
-                :offset 2}))
+                :offset 2
+                :consumer-metadata 10}))
 
 (defcodec magic-byte
   (enum :byte {:zero 0}))

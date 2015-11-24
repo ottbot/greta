@@ -4,8 +4,6 @@
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
-
-
 (defn client
   "A client to perform metadata requests
 
