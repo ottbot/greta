@@ -33,7 +33,7 @@
             :value "there!"}
 
         fm {:partition 1
-            :error-code 0
+            :error-code :none
             :highwater-mark-offset 0
             :message-set [ms]}
 

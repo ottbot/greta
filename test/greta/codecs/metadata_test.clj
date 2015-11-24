@@ -19,13 +19,13 @@
              :host "example.com"
              :port 9092}]
 
-        p [{:partition-error-code 0
+        p [{:partition-error-code :none
             :partition-id 1
             :leader 1
             :replicas [1]
             :isr [1]}]
 
-        t [{:topic-error-code 0
+        t [{:topic-error-code :none
             :topic-name "greata-tests"
             :partition-metadata p}]
 

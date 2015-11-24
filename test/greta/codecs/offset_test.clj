@@ -24,7 +24,7 @@
 (deftest response-test
   (let [t {:topic "greta-tests"
            :partitions [{:partition 0
-                         :error-code 0
+                         :error-code :none
                          :offsets [0]}]}
 
         r {:correlation-id 1

@@ -91,7 +91,7 @@
 (defn optimized-messages [s]
   (compile-frame
    (ordered-map :partition :int32
-                :error-code :int16
+                :error-code c/error
                 :highwater-mark-offset :int64
                 :message-set (header :int32
                                      (partial unterminated-message-set s)
@@ -118,7 +118,7 @@
   (compile-frame
    (ordered-map
     :partition :int32
-    :error-code :int16
+    :error-code c/error
     :highwater-mark-offset :int64
     :message-set (finite-frame :int32
                                (repeated (message-set s)

@@ -29,7 +29,7 @@
    :partitions (repeated
                 (ordered-map
                  :partition :int32
-                 :error-code :int16
+                 :error-code c/error
                  :offsets (repeated :int64)))))
 
 

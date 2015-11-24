@@ -64,7 +64,7 @@
   (repeated
    (ordered-map
     :parition :int32
-    :error-code :int16
+    :error-code c/error
     :offset :int64)))
 
 

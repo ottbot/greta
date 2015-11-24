@@ -41,6 +41,6 @@
            :produce [{:topic "greta-tests"
                       :results [{:parition 0
                                  :offset 123
-                                 :error-code 0}]}]}]
+                                 :error-code :none}]}]}]
 
     (is (round-trip? response m))))

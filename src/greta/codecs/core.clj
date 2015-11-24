@@ -22,6 +22,26 @@
                :gzip 1
                :snappy 2}))
 
+(defcodec error
+  (enum :int16 {:none 0
+                :unknown -1
+                :offset-out-of-range 1
+                :invalid-message 2
+                :unknown-topic-or-partition 3
+                :invalid-message-size 4
+                :leader-not-available 5
+                :not-leader-for-parition 6
+                :requrest-timed-out 7
+                :broker-not-available 8
+                :replica-not-available 9
+                :message-size-too-large 10
+                :stale-controller-epoch 11
+                :offset-metadata-too-large 12
+                :offset-load-in-progress 14
+                :consumer-coordinator-not-available 15
+                :not-coordinator-for-consumer-code 16}))
+
+
 (defn crc [x]
   (.getValue
    (doto (java.util.zip.CRC32.)
