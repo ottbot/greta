@@ -18,11 +18,9 @@
 
 (deftest topic-parition-leader-test
 
-  (is (= {:node-id 0
-          :host "localhost.localdomain"
-          :port 9092}
-
-         @(topic-partition-leader "localhost" 9092 "greta-tests" 0)))
+  (is (every? @(topic-partition-leader "localhost" 9092
+                                       "greta-tests" 0)
+              [:host :port :node-id]))
 
   ;; If auto.create.topics.enable = true, this will fail with a
   ;; different error message (leader not available) the first time,
