@@ -22,7 +22,7 @@
 
 (defn topic-partition-leader
   "Takes a metadata client and returns a new one connected to the
-  leader for a parition topic. Original connection will be closed."
+  leader for a partition topic. Original connection will be closed."
   [host port topic partition-id]
 
   (d/let-flow [c (client host port)
@@ -48,7 +48,7 @@
                           :leader
                           (nth (:brokers r)))
 
-                 "ERROR: Parition not found")
+                 "ERROR: Partition not found")
 
              (str "ERROR: Kafka error: "
                   (name

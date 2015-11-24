@@ -16,7 +16,7 @@
       (is (= cid (:correlation-id
                   @(s/take! c)))))))
 
-(deftest topic-parition-leader-test
+(deftest topic-partition-leader-test
 
   (is (every? @(topic-partition-leader "localhost" 9092
                                        "greta-tests" 0)
@@ -29,6 +29,6 @@
     (is (= "ERROR: Kafka error: unknown-topic-or-partition"
            @(topic-partition-leader "localhost" 9092 "none-such" 0))))
 
-  (testing "when the parition doesn't exist"
-    (is (= "ERROR: Parition not found"
+  (testing "when the partition doesn't exist"
+    (is (= "ERROR: Partition not found"
            @(topic-partition-leader "localhost" 9092 "greta-tests" 45)))))

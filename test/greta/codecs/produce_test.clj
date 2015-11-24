@@ -39,7 +39,7 @@
 (deftest produce-response-test
   (let [m {:correlation-id 1
            :produce [{:topic "greta-tests"
-                      :results [{:parition 0
+                      :results [{:partition 0
                                  :offset 123
                                  :error-code :none}]}]}]
 

@@ -30,8 +30,8 @@
                 :unknown-topic-or-partition 3
                 :invalid-message-size 4
                 :leader-not-available 5
-                :not-leader-for-parition 6
-                :requrest-timed-out 7
+                :not-leader-for-partition 6
+                :request-timed-out 7
                 :broker-not-available 8
                 :replica-not-available 9
                 :message-size-too-large 10
