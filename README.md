@@ -1,8 +1,10 @@
 # greta
 
-A Kafka client for Clojure projects. Implements the API introduced in
-Kafka 0.8 as an Aleph client.
+A modern and (fairly) low-level Kafka client for Clojure projects.
 
+It implementments the API introduced in Kafka 0.8.3 as an Aleph TCP client.
+
+Development targets Kafka 0.9.0+.
 
 
 ## Usage
