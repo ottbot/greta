@@ -19,7 +19,7 @@
 
 (defcodec partition-metadata
   (repeated
-   (ordered-map :partition-error-code :int16
+   (ordered-map :partition-error-code c/error
                 :partition-id :int32
                 :leader :int32
                 :replicas (repeated :int32)
@@ -28,9 +28,9 @@
 
 (defcodec topics
   (repeated
-   (ordered-map :topic-error-code :int16
+   (ordered-map :topic-error-code c/error
                 :topic-name c/sized-string
-                :parition-metadata partition-metadata)))
+                :partition-metadata partition-metadata)))
 
 (defcodec response
   (finite-frame :int32

@@ -63,8 +63,8 @@
 (defcodec partition-results
   (repeated
    (ordered-map
-    :parition :int32
-    :error-code :int16
+    :partition :int32
+    :error-code c/error
     :offset :int64)))
 
 

@@ -11,7 +11,8 @@
 (defcodec api-key
   (enum :int16 {:metadata 3
                 :produce 0
-                :fetch 1}))
+                :fetch 1
+                :offset 2}))
 
 (defcodec magic-byte
   (enum :byte {:zero 0}))
@@ -20,6 +21,26 @@
   (enum :byte {:none 0
                :gzip 1
                :snappy 2}))
+
+(defcodec error
+  (enum :int16 {:none 0
+                :unknown -1
+                :offset-out-of-range 1
+                :invalid-message 2
+                :unknown-topic-or-partition 3
+                :invalid-message-size 4
+                :leader-not-available 5
+                :not-leader-for-partition 6
+                :request-timed-out 7
+                :broker-not-available 8
+                :replica-not-available 9
+                :message-size-too-large 10
+                :stale-controller-epoch 11
+                :offset-metadata-too-large 12
+                :offset-load-in-progress 14
+                :consumer-coordinator-not-available 15
+                :not-coordinator-for-consumer-code 16}))
+
 
 (defn crc [x]
   (.getValue

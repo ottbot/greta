@@ -18,8 +18,10 @@
 
 (defn client
   [host port encoder decoder]
-  (d/chain (tcp/client {:host host
-                        :port port})
-           (partial protocol-stream
-                    encoder
-                    decoder)))
+  (d/chain
+   (tcp/client {:host host
+                :port port})
+
+   (partial protocol-stream
+            encoder
+            decoder)))
