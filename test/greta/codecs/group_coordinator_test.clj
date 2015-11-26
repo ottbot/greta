@@ -1,13 +1,11 @@
-(ns greta.codecs.consumer-metadata-test
+(ns greta.codecs.group-coordinator-test
   (:require [clojure.test :refer :all]
-            [gloss.io :as io]
-            [greta.codecs.core :as c]
             [greta.codecs.core-test :refer [round-trip?]]
-            [greta.codecs.consumer-metadata :refer :all]))
+            [greta.codecs.group-coordinator :refer :all]))
 
 
 (deftest request-test
-  (let [r {:api-key :consumer-metadata
+  (let [r {:api-key :group-coordinator
            :api-version 0
            :correlation-id 1
            :client-id "greta-test"

@@ -9,11 +9,13 @@
   (repeated :byte :prefix :int32))
 
 (defcodec api-key
-  (enum :int16 {:metadata 3
-                :produce 0
+  (enum :int16 {:produce 0
                 :fetch 1
                 :offset 2
-                :consumer-metadata 10}))
+                :metadata 3
+                :offset-commit 8
+                :offset-fetch 9
+                :group-coordinator 10}))
 
 (defcodec magic-byte
   (enum :byte {:zero 0}))
@@ -40,8 +42,22 @@
                 :offset-metadata-too-large 12
                 :offset-load-in-progress 14
                 :consumer-coordinator-not-available 15
-                :not-coordinator-for-consumer-code 16}))
-
+                :not-coordinator-for-consumer-code 16
+                :invalid-topic 17
+                :record-list-too-largee	18
+                :not-enough-replicas 19
+                :not-enough-replicas-after-append	20
+                :invalid-required-acks 21
+                :illegal-generation	22
+                :inconsistent-group-protocol	23
+                :invalid-group-id	24
+                :unknown-member-id 25
+                :invalid-session-timeout 26
+                :rebalance-in-progress 27
+                :invalid-commit-offset-size	28
+                :topic-authorization-failed	29
+                :group-authorization-failed	30
+                :cluster-authorization-failed	31}))
 
 (defn crc [x]
   (.getValue

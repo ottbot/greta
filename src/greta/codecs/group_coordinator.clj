@@ -1,4 +1,4 @@
-(ns greta.codecs.consumer-metadata
+(ns greta.codecs.group-coordinator
   (:require [greta.codecs.core :as c]
             [gloss.core :refer :all]))
 
