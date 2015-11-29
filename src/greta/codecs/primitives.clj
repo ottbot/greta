@@ -1,15 +1,16 @@
-(ns greta.codecs.core
-  (:require [gloss.core :refer :all]))
+(ns greta.codecs.primitives
+  (:require [gloss.core :as c])
+  (:refer-clojure :exclude [bytes string]))
 
-(defcodec sized-string
-  (finite-frame :int16
-                (string :utf-8)))
+(c/defcodec string
+  (c/finite-frame :int16
+                (c/string :utf-8)))
 
-(defcodec sized-bytes
-  (repeated :byte :prefix :int32))
+(c/defcodec bytes
+  (c/repeated :byte :prefix :int32))
 
-(defcodec api-key
-  (enum :int16 {:produce 0
+(c/defcodec api-key
+  (c/enum :int16 {:produce 0
                 :fetch 1
                 :offset 2
                 :metadata 3
@@ -17,16 +18,16 @@
                 :offset-fetch 9
                 :group-coordinator 10}))
 
-(defcodec magic-byte
-  (enum :byte {:zero 0}))
+(c/defcodec magic-byte
+  (c/enum :byte {:zero 0}))
 
-(defcodec compression
-  (enum :byte {:none 0
+(c/defcodec compression
+  (c/enum :byte {:none 0
                :gzip 1
                :snappy 2}))
 
-(defcodec error
-  (enum :int16 {:none 0
+(c/defcodec error
+  (c/enum :int16 {:none 0
                 :unknown -1
                 :offset-out-of-range 1
                 :invalid-message 2
@@ -58,46 +59,3 @@
                 :topic-authorization-failed	29
                 :group-authorization-failed	30
                 :cluster-authorization-failed	31}))
-
-(defn crc [x]
-  (.getValue
-   (doto (java.util.zip.CRC32.)
-     (.reset)
-     (.update x))))
-
-
-(defprotocol KafkaSerde
-  "Takes a map containing a :key and :value, and returns the same map
-  but with (de)serialized values for those keys"
-  (serialize [this v])
-  (deserialize [this v]))
-
-(defn identity-serde
-  "Doesn't modify values."
-  []
-  (reify
-    KafkaSerde
-    (serialize [_ m] m)
-    (deserialize [_ m] m)))
-
-
-(defn string-serde
-  "Takes and returns strings"
-  []
-  (reify
-    KafkaSerde
-    (serialize [_ m]
-      (letfn [(xf [v] (-> v
-                          .getBytes
-                          bytes
-                          vec))]
-        (-> m
-            (update :key xf)
-            (update :value xf))))
-    (deserialize [_ m]
-      (letfn [(xf [v] (if (= (first v) -1)
-                        nil
-                        (transduce (map char) str v)))]
-        (-> m
-            (update :key xf)
-            (update :value xf))))))

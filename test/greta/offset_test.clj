@@ -9,18 +9,11 @@
               [:error-code :host :port :coordinator-id])))
 
 
-
-
-(deftest coordinator-test
-  (is (every? @(coordinator "localhost" 9092 "my-group")
-              [:host :port :error-code :coordinator-id])))
-
-
 (deftest offset-committer-test
-  (let [r {:api-key :offset-commit
-           :api-version 1
-           :correlation-id 1
-           :client-id "greta-test"
+  (let [r {:header {:api-key :offset-commit
+                    :api-version 1
+                    :correlation-id 1
+                    :client-id "greta-test"}
            :consumer-group-id "my-group"
            :consumer-group-generation-id 1
            :consumer-id "my-group"
@@ -31,26 +24,25 @@
                                    :timestamp (System/currentTimeMillis)
                                    :metadata "funky"}]}]}]
 
-    (with-open [c @(offset-committer "localhost"
-                                     9092
-                                     "my-group")]
+    (with-open [c @(coordinator-client "localhost" 9092 "my-group")]
       @(s/put! c r)
-      (is (= 1
-             @(s/try-take! c 1000))))))
+      (is (= :illegal-generation
+             (get-in @(s/try-take! c 1000)
+                     [:topics 0 :partitions 0 :error-code]))))))
 
 
 (deftest offset-fetcher-test
-  (let [r {:api-key :offset-fetch
-           :api-version 1
-           :correlation-id 1
-           :client-id "greta-test"
+  (let [r {:header {:api-key :offset-fetch
+                    :api-version 1
+                    :correlation-id 1
+                    :client-id "greta-test"}
            :consumer-group "my-group"
            :topics [{:topic "greta-tests"
                      :partitions [0]}]}]
 
-    (with-open [c @(offset-fetcher "localhost"
-                                   9092
-                                   "my-group")]
+    (with-open [c @(coordinator-client "localhost" 9092 "my-group")]
 
       @(s/put! c r)
-      (is (= 1 @(s/try-take! c 1000))))))
+      (is (= :none
+             (get-in @(s/try-take! c 1000)
+                     [:topics 0 :partitions 0 :error-code]))))))

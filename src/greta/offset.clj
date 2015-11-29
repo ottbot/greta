@@ -1,8 +1,5 @@
 (ns greta.offset
-  (:require [greta.codecs.group-coordinator :as gc]
-            [greta.codecs.offset-commit :as oc]
-            [greta.codecs.offset-fetch :as of]
-            [greta.core :as c]
+  (:require [greta.core :as c]
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
@@ -10,15 +7,12 @@
   "Finds the host and port for the consumer offset manager."
   [host port consumer-group]
 
-  (d/let-flow [c (c/client host
-                           port
-                           gc/request
-                           gc/response)
+  (d/let-flow [c (c/client host port)
 
-               req (s/put! c {:api-key :group-coordinator
-                              :api-version 0
-                              :correlation-id 1
-                              :client-id "greta"
+               req (s/put! c {:header {:api-key :group-coordinator
+                                       :api-version 0
+                                       :correlation-id 1
+                                       :client-id "greta"}
                               :consumer-group consumer-group})]
 
       (d/chain
@@ -37,22 +31,5 @@
          (.close c)
          (d/success-deferred r)))))
 
-
-
-
-(defn offset-committer [host port consumer-group]
-  (let [{:keys [host port error-code]}
-        @(coordinator host port consumer-group)]
-
-    (if (= error-code :none)
-      (c/client host port oc/request oc/response)
-      error-code)))
-
-
-(defn offset-fetcher [host port consumer-group]
-  (let [{:keys [host port error-code]}
-        @(coordinator host port consumer-group)]
-
-    (if (= error-code :none)
-      (c/client host port of/request of/response)
-      error-code)))
+(defn coordinator-client [host port consumer-group]
+  (c/client @(coordinator host port consumer-group)))

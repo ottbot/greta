@@ -1,21 +1,30 @@
 (ns greta.codecs.produce
   (:require [gloss.core :refer :all]
             [gloss.io :as io]
-            [greta.codecs.core :as c]))
+            [greta.codecs.primitives :as p]
+            [greta.serde :refer [serialize
+                                  deserialize]]))
+
+(defn crc [x]
+  (.getValue
+   (doto (java.util.zip.CRC32.)
+     (.reset)
+     (.update x))))
 
 
 (defn message-body [serde]
   (compile-frame
    (ordered-map
-    :magic-byte c/magic-byte
-    :attributes c/compression
-    :key c/sized-bytes
-    :value c/sized-bytes)
-   (partial c/serialize serde)
-   (partial c/deserialize serde)))
+    :magic-byte p/magic-byte
+    :attributes p/compression
+    :key p/bytes
+    :value p/bytes)
+   (partial serialize serde)
+   (partial deserialize serde)))
+
 
 (defn message-body-crc [serde x]
-  (c/crc
+  (crc
    (io/contiguous
     (io/encode (message-body serde) x))))
 
@@ -38,7 +47,7 @@
 (defn produce [s]
   (compile-frame
    (ordered-map
-    :topic c/sized-string
+    :topic p/string
     :messages (repeated
                (ordered-map
                 :partition :int32
@@ -47,32 +56,22 @@
                               (message-set s)))))))
 
 (defn request [serde]
-  (compile-frame
-   (finite-frame
-    :int32
-    (ordered-map
-     :api-key c/api-key
-     :api-version :int16
-     :correlation-id :int32
-     :client-id c/sized-string
-     :required-acks :int16
-     :timeout :int32
-     :produce (repeated (produce serde))))))
+  (ordered-map
+   :required-acks :int16
+   :timeout :int32
+   :produce (repeated (produce serde))))
 
 
 (defcodec partition-results
   (repeated
    (ordered-map
     :partition :int32
-    :error-code c/error
+    :error-code p/error
     :offset :int64)))
 
 
 (defcodec response
-  (finite-frame :int32
-                (ordered-map
-                 :correlation-id :int32
-                 :produce (repeated
-                           (ordered-map
-                            :topic c/sized-string
-                            :results partition-results)))))
+  (repeated
+   (ordered-map
+    :topic p/string
+    :results partition-results)))
