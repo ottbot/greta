@@ -50,7 +50,7 @@
 
              :replica-id -1
              :max-wait-time 1000
-             :min-bytes 10
+             :min-bytes 1
              :topics [{:topic "greta-tests"
                        :messages [{:partition 0
                                    :fetch-offset 0
@@ -59,9 +59,8 @@
     (with-open [c @(client "localhost" 9092 (serde/string-serde))]
 
       (is @(s/put! c msg))
-      (is (get-in
-           @(s/try-take! c ::drained 1000 ::timeout)
-           [:topics 0 :messages])))))
+      (is (= 1
+             @(s/try-take! c ::drained 1000 ::timeout))))))
 
 
 (deftest offset-test'
@@ -102,9 +101,11 @@
 
     (with-open [c @(client "localhost" 9092)]
       @(s/put! c r)
-      (is (= :illegal-generation
-             (get-in @(s/try-take! c 1000)
-                     [:topics 0 :partitions 0 :error-code]))))))
+      (is (some #{(get-in @(s/try-take! c 1000)
+                          [:topics 0 :partitions 0 :error-code])}
+
+                [:illegal-generation
+                 :consumer-coordinator-not-available])))))
 
 
 (deftest offset-fetch-test'
@@ -119,6 +120,7 @@
     (with-open [c @(client "localhost" 9092)]
 
       @(s/put! c r)
-      (is (= :none
-             (get-in @(s/try-take! c 1000)
-                     [:topics 0 :partitions 0 :error-code]))))))
+      (is (some #{(get-in @(s/try-take! c 1000)
+                          [:topics 0 :partitions 0 :error-code])}
+
+           [:none :not-coordinator-for-consumer])))))

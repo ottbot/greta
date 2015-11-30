@@ -3,23 +3,50 @@
                                           Writer
                                           read-bytes]]
             [gloss.core :refer :all]
+            [gloss.data.bytes.core :as b]
             [greta.codecs.primitives :as p]
             [greta.serde :refer [serialize
                                  deserialize]]))
+
+
+(defn message
+  "A kafka message. This may be smaller than the given size, the
+  remaining bytes wil be discarded."
+  [serde size]
+  (let [message-frame (compile-frame
+                       (ordered-map
+                        :crc :int32
+                        :magic-byte p/magic-byte
+                        :attributes p/compression
+                        :key p/bytes
+                        :value p/bytes)
+                       (partial serialize serde)
+                       (partial deserialize serde))]
+
+    (reify
+      Reader
+      (read-bytes [_ buf-seq]
+
+        (let [[s x r] (read-bytes message-frame
+                                  (b/take-bytes buf-seq size))]
+          (if s
+            [true x (b/drop-bytes buf-seq size)]
+            [false x r])))
+
+      Writer
+      (sizeof [_] nil)
+      (write-bytes [_ buf vs]
+        (throw (Exception. "Write not implmeneted."))))))
 
 
 (defn message-set [serde]
   (compile-frame
    (ordered-map
     :offset :int64
-    :size :int32
-    :crc :uint32
-    :magic-byte p/magic-byte
-    :attributes p/compression
-    :key p/bytes
-    :value p/bytes)
-   (partial serialize serde)
-   (partial deserialize serde)))
+    :message (header
+              :int32
+              (partial message serde)
+              identity))))
 
 
 (defn unterminated-message-set
@@ -28,10 +55,8 @@
    (unterminated-message-set serde max-bytes []))
 
   ([serde max-bytes messages]
-   (let [codec (message-set serde)
-         codec-header (compile-frame [:int64 :int32])
-         read-codec-header #(read-bytes codec-header %)
-         hsize (sizeof codec-header)]
+
+   (let [message-set-frame (message-set serde)]
 
      (reify
        Reader
@@ -39,29 +64,24 @@
 
          (loop [messages messages
                 bs buf-seq
-                tot 0]
+                limit max-bytes]
 
-           (let [[success msg r] (read-bytes codec bs)]
+           (if-let [xxx (last messages)]
+             (println "offset" (:offset xxx)))
+
+           (let [[success msg r] (read-bytes message-set-frame bs)]
 
              (if success
 
                (recur (conj messages msg)
                       r
-                      (+ tot hsize (:size msg)))
+                      (- limit (byte-count bs)))
 
-               (if (< tot max-bytes)
+               (if (< (byte-count r) limit)
+                   [false (unterminated-message-set limit messages) bs]
+                   [true messages nil])))))
 
-                 (let [[success h _] (read-codec-header bs)
-                       limit (- max-bytes tot)]
 
-                   (if (or
-                        (< hsize limit)
-                        (and success (> limit (+ hsize (second h)))))
-
-                     [false (unterminated-message-set limit messages) bs]
-                     [true messages nil]))
-
-                 [true messages nil])))))
        Writer
        (sizeof [_]
          nil)

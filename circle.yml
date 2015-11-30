@@ -6,7 +6,8 @@ dependencies:
   pre:
     - ./ci-kafka.sh:
         background: true
-
+    - sleep 30
+    - echo "boot" | kafka_dist/bin/kafka-console-producer.sh --topic greta-tests --broker-list localhost:9092
 
   cache_directories:
     - kafka_dist

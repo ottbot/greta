@@ -1,4 +1,5 @@
-(ns greta.serde)
+(ns greta.serde
+  (:require [byte-streams :as bs]))
 
 (defprotocol KafkaSerde
   "Takes a map containing a :key and :value, and returns the same map
@@ -19,21 +20,14 @@
 (defn string-serde
   "Takes and returns strings"
   []
-  (reify
-    KafkaSerde
-    (serialize [_ m]
-      (letfn [(xf [v] (-> v
-                          .getBytes
-                          bytes
-                          vec))]
-        (-> m
-            (update :key xf)
-            (update :value xf))))
+  (letfn [(update-bytes [m xf]
+            (-> m
+                (update :key #(some-> % xf))
+                (update :value #(some-> % xf))))]
+    (reify
+      KafkaSerde
+      (serialize [_ m]
+        (update-bytes m bs/to-byte-buffers))
 
-    (deserialize [_ m]
-      (letfn [(xf [v] (if (= (first v) -1)
-                        nil
-                        (transduce (map char) str v)))]
-        (-> m
-            (update :key xf)
-            (update :value xf))))))
+      (deserialize [_ m]
+        (update-bytes m bs/to-string)))))
