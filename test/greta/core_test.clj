@@ -59,10 +59,9 @@
     (with-open [c @(client "localhost" 9092 (serde/string-serde))]
 
       (is @(s/put! c msg))
-      (is (not-empty
-           (get-in
-            @(s/try-take! c ::drained 1000 ::timeout)
-            [:topics 0 :messages]))))))
+      (is (get-in
+           @(s/try-take! c ::drained 1000 ::timeout)
+           [:topics 0 :messages])))))
 
 
 (deftest offset-test'
