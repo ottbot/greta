@@ -4,10 +4,15 @@ machine:
 
 dependencies:
   pre:
-    - ./ci-kafka.sh:
+    - ./ci-kafka.sh setup
+    - ./ci-kafka.sh start-zk:
+        background: true
+    - ./ci-kafka.sh start-kafka:
         background: true
     - sleep 30
-    - echo "boot" | kafka_dist/bin/kafka-console-producer.sh --topic greta-tests --broker-list localhost:9092
+    - ./ci-kafka.sh create-test-topic
+    - sleep 5
+    - ./ci-kafka.sh publish-to-test-topic
 
   cache_directories:
     - kafka_dist

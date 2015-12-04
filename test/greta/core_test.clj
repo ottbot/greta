@@ -118,7 +118,9 @@
                         [:topics 0 :partitions 0 :error-code])}
 
               [:illegal-generation
-               :consumer-coordinator-not-available]))))
+               :consumer-coordinator-not-available
+               :not-coordinator-for-consumer
+               ]))))
 
 
 (deftest offset-fetch-test'
