@@ -4,6 +4,22 @@
             [greta.serde :as serde]
             [manifold.stream :as s]))
 
+
+;; Note: these tests are kind of temporary, while verifying that
+;; 1) the raw api implemention works
+;; 2) we can use a single connection for all of these things
+
+(def ^:dynamic *conn* nil)
+
+(defn with-client [f]
+  (with-open [c @(client "localhost" 9092 (serde/string-serde))]
+    (binding [*conn* c]
+      (f))))
+
+
+(use-fixtures :once with-client )
+
+
 (deftest client-test
   (let [msg {:header {:api-key :metadata
                       :api-version 0
@@ -11,10 +27,9 @@
 
              :topics []}]
 
-    (with-open [c @(client "localhost" 9092)]
-      (is @(s/put! c msg))
-      (is (every? @(s/take! c)
-                  [:brokers :topics])))))
+    (is @(s/put! *conn* msg))
+    (is (every? @(s/take! *conn*)
+                [:brokers :topics]))))
 
 
 (deftest produce-test'
@@ -33,13 +48,12 @@
                                                              :key ""
                                                              :value "see you on the other side!"}}]}]}]}]
 
-    (with-open [c @(client "localhost" 9092 (serde/string-serde))]
 
-      (is @(s/put! c msg))
-      (is (= :none
-             (get-in
-              @(s/take! c)
-              [0 :results 0 :error-code]))))))
+    (is @(s/put! *conn* msg))
+    (is (= :none
+           (get-in
+            @(s/take! *conn*)
+            [0 :results 0 :error-code])))))
 
 
 (deftest fetch-test'
@@ -54,13 +68,14 @@
              :topics [{:topic "greta-tests"
                        :messages [{:partition 0
                                    :fetch-offset 0
-                                   :max-bytes 10240}]}]}]
+                                   :max-bytes 1024}]}]}]
 
-    (with-open [c @(client "localhost" 9092 (serde/string-serde))]
 
-      (is @(s/put! c msg))
-      (is (= 1
-             @(s/try-take! c ::drained 1000 ::timeout))))))
+    (is @(s/put! *conn* msg))
+    (is (= :none
+           (get-in
+            @(s/try-take! *conn* ::drained 1000 ::timeout)
+            [:topics 0 :messages 0 :error-code])))))
 
 
 (deftest offset-test'
@@ -75,13 +90,12 @@
                                      :time -2
                                      :max-number-of-offsets 100}]}]}]
 
-    (with-open [c @(client "localhost" 9092)]
 
-      (is @(s/put! c msg))
-      (is (= :none
-             (get-in
-              @(s/take! c)
-              [0 :partitions 0 :error-code]))))))
+    (is @(s/put! *conn* msg))
+    (is (= :none
+           (get-in
+            @(s/take! *conn*)
+            [0 :partitions 0 :error-code])))))
 
 
 (deftest offset-commit-test'
@@ -99,13 +113,12 @@
                                    :timestamp (System/currentTimeMillis)
                                    :metadata "funky"}]}]}]
 
-    (with-open [c @(client "localhost" 9092)]
-      @(s/put! c r)
-      (is (some #{(get-in @(s/try-take! c 1000)
-                          [:topics 0 :partitions 0 :error-code])}
+    @(s/put! *conn* r)
+    (is (some #{(get-in @(s/try-take! *conn* 1000)
+                        [:topics 0 :partitions 0 :error-code])}
 
-                [:illegal-generation
-                 :consumer-coordinator-not-available])))))
+              [:illegal-generation
+               :consumer-coordinator-not-available]))))
 
 
 (deftest offset-fetch-test'
@@ -117,10 +130,8 @@
            :topics [{:topic "greta-tests"
                      :partitions [0]}]}]
 
-    (with-open [c @(client "localhost" 9092)]
+    @(s/put! *conn* r)
+    (is (some #{(get-in @(s/try-take! *conn* 1000)
+                        [:topics 0 :partitions 0 :error-code])}
 
-      @(s/put! c r)
-      (is (some #{(get-in @(s/try-take! c 1000)
-                          [:topics 0 :partitions 0 :error-code])}
-
-           [:none :not-coordinator-for-consumer])))))
+              [:none :not-coordinator-for-consumer]))))

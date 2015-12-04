@@ -2,7 +2,8 @@
   (:require [gloss.core :refer :all]
             [greta.codecs.messages :as messages]
             [greta.codecs.primitives :as p]
-            [greta.codecs.produce :as produce-codec]))
+            [greta.codecs.produce :as produce-codec]
+            [manifold.stream :as s]))
 
 
 (defprotocol KafkaApi
@@ -189,19 +190,22 @@
         :port :int32)))))
 
 
-(defn correlated-codecs
-  "Does all sorts. TODO: describe this thing..
 
-  Note: you can only have up to `Integer/MAX_VALUE` pending requests.
+
+(defn correlated-codecs
+  "This ensures that responses are returned in order.
+
+  Note: you can only have up to 1000 pending requests until new
+  requests are blocked. Would you like to have this number be configurable?
   "
   [serde]
-  (let [requests (atom {})
+  (let [requests (s/stream 1000)
 
         request-count (atom 0)
 
         next-correlation-id! (fn [_]
-                              (swap! request-count
-                                     #(mod (inc %) Integer/MAX_VALUE)))
+                               (swap! request-count
+                                      #(mod (inc %) Integer/MAX_VALUE)))
 
         request-header (compile-frame
                         (ordered-map
@@ -234,7 +238,9 @@
              (let [cid (:correlation-id m)
                    api (-> m :api-key apis)]
 
-               (swap! requests assoc cid api)
+               @(s/put! requests {:correlation-id cid
+                                  :api api})
+
                (request api)))
 
            (fn [m]
@@ -252,8 +258,8 @@
            :int32 ;; correlation-id
 
            (fn [cid]
-             (let [api (@requests cid)]
-               (swap! requests dissoc cid)
-               (response api)))
+             (let [m @(s/take! requests)]
+               (assert (= cid (:correlation-id m)) "ERROR: correlation id does not match.")
+               (response (:api m))))
 
            :correlation-id)))))))

@@ -39,47 +39,39 @@
         (throw (Exception. "Write not implmeneted."))))))
 
 
-(defn message-set [serde]
-  (compile-frame
-   (ordered-map
-    :offset :int64
-    :message (header
-              :int32
-              (partial message serde)
-              identity))))
-
-
-(defn unterminated-message-set
-  "Only a bit nasty. TODO: describe this"
+(defn message-set
+  "Builds a list of "
   ([serde max-bytes]
-   (unterminated-message-set serde max-bytes []))
+   (message-set serde max-bytes []))
 
   ([serde max-bytes messages]
 
-   (let [message-set-frame (message-set serde)]
+   (let [message-set-frame (compile-frame
+                            (ordered-map
+                             :offset :int64
+                             :message (header
+                                       :int32
+                                       (partial message serde)
+                                       identity)))]
 
      (reify
        Reader
        (read-bytes [_ buf-seq]
 
-         (loop [messages messages
+         (loop [ms messages
                 bs buf-seq
                 limit max-bytes]
 
-           (if-let [xxx (last messages)]
-             (println "offset" (:offset xxx)))
-
-           (let [[success msg r] (read-bytes message-set-frame bs)]
+           (let [[success x r] (read-bytes message-set-frame bs)]
 
              (if success
 
-               (recur (conj messages msg)
-                      r
-                      (- limit (byte-count bs)))
+               (recur
+                (conj ms x) r (- limit (byte-count bs)))
 
                (if (< (byte-count r) limit)
-                   [false (unterminated-message-set limit messages) bs]
-                   [true messages nil])))))
+                 [false (message-set serde limit messages) bs]
+                 [true messages nil])))))
 
 
        Writer
@@ -95,5 +87,5 @@
                 :error-code p/error
                 :highwater-mark-offset :int64
                 :message-set (header :int32
-                                     (partial unterminated-message-set serde)
+                                     (partial message-set serde)
                                      identity))))
