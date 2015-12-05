@@ -14,7 +14,10 @@
        c/nil-frame
        (c/finite-block h)))
 
-   c/byte-count))
+   (fn [b]
+     (if (nil? b)
+       -1
+       (c/byte-count b)))))
 
 
 

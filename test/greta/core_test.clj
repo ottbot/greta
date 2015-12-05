@@ -72,10 +72,14 @@
 
 
     (is @(s/put! *conn* msg))
-    (is (= :none
-           (get-in
-            @(s/try-take! *conn* ::drained 1000 ::timeout)
-            [:topics 0 :messages 0 :error-code])))))
+
+    (let [res @(s/try-take! *conn* ::drained 1000 ::timeout)
+          m (get-in res [:topics 0 :messages 0])]
+
+      (is (= :none (:error-code m)))
+
+      (is (or (= 0 (:highwater-mark-offset m))
+              (not-empty (:message-set m)))))))
 
 
 (deftest offset-test'

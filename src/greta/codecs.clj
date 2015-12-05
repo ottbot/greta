@@ -99,7 +99,11 @@
                  (ordered-map
                   :topic-name p/string
                   :messages (repeated
-                             (messages/optimized serde)))))))))
+                             (compile-frame
+                              (ordered-map :partition :int32
+                                           :error-code p/error
+                                           :highwater-mark-offset :int64
+                                           :message-set (messages/message-set serde)))))))))))
 
 
 ;; REFACTOR produce should use the message ns
