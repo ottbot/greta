@@ -2,12 +2,11 @@
   (:require [gloss.core :refer :all]
             [greta.codecs.messages :as messages]
             [greta.codecs.primitives :as p]
-            [greta.codecs.produce :as produce-codec]
             [manifold.stream :as s]))
 
 
 (defprotocol KafkaApi
-  "Provides a codec used to encode requests and decode responses sent
+  "A codec used to encode requests and decode responses sent
   and received from Kafka."
   (request [t])
   (response [t]))
@@ -106,15 +105,32 @@
                                            :message-set (messages/message-set serde)))))))))))
 
 
-;; REFACTOR produce should use the message ns
+
 (defn produce [serde]
   (reify
     KafkaApi
     (request [_]
       (compile-frame
-       (produce-codec/request serde)))
+       (ordered-map
+        :required-acks :int16
+        :timeout :int32
+        :produce (repeated
+                  (ordered-map
+                   :topic p/string
+                   :messages (repeated
+                              (ordered-map
+                               :partition :int32
+                               :message-set (messages/message-set serde))))))))
     (response [_]
-      produce-codec/response)))
+      (compile-frame
+       (repeated
+        (ordered-map
+         :topic p/string
+         :results (repeated
+                   (ordered-map
+                    :partition :int32
+                    :error-code p/error
+                    :offset :int64))))))))
 
 
 (defn offset-fetch []
