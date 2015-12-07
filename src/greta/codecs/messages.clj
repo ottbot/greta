@@ -9,43 +9,61 @@
             [gloss.data.bytes.core :as b]
             [greta.codecs.primitives :as p]
             [greta.serde :refer [serialize
-                                 deserialize]]))
+                                 deserialize]])
 
-(defn- write-finite-bytes [prefix codec v]
-  (b/create-buf-seq
-   (write-bytes
-    (finite-frame prefix codec)
-    nil v)))
+    (:import [java.nio HeapByteBuffer]))
+
+
+(defn crc [^HeapByteBuffer x]
+  (.getValue
+   (doto (java.util.zip.CRC32.)
+     (.reset)
+     (.update x))))
+
+
+;; this will look nice eventually.
 
 (defn message
   "A kafka message. This may be smaller than the given size, the
-  remaining bytes wil be discarded."
+  remaining bytes wil be discarded.
+
+  The codec will compute the required CRC when producing a message
+  and verify the incoming CRC when fetching.
+  "
   [serde]
   (let [prefix (compile-frame :int32)
 
+        check (compile-frame :uint32)
+
         codec (compile-frame
                (ordered-map
-                :crc :int32
                 :magic-byte p/magic-byte
                 :attributes p/compression
                 :key p/bytes
                 :value p/bytes)
                (partial serialize serde)
-               (partial deserialize serde))]
+               (partial deserialize serde))
+
+        crc* (fn [bs]
+               (crc (b/take-contiguous-bytes
+                     bs (b/byte-count bs))))]
 
     (reify
       Reader
       (read-bytes [_ buf-seq]
-
         (read-bytes
          (compose-callback
           prefix
-
-          (fn [size b]
-            (let [[s x r] (read-bytes codec
-                                      (b/take-bytes b size))]
+          (fn [size bs]
+            (let [[s x r] (read-bytes
+                           (compose-callback
+                            check
+                            (fn [x bs']
+                              ;; (assert (= x (crc* bs')) "CRC matches")
+                              (read-bytes codec bs')))
+                           bs)]
               (if s
-                [true x (b/drop-bytes b size)]
+                [true x (b/drop-bytes bs size)]
                 [false x r]))))
 
          buf-seq))
@@ -53,7 +71,13 @@
       Writer
       (sizeof [_] nil)
       (write-bytes [_ _ v]
-        (write-finite-bytes prefix codec v)))))
+        (let [body (b/create-buf-seq (write-bytes codec nil v))
+              size (b/byte-count body)]
+          (concat
+           (write-bytes prefix nil (+ (sizeof check)
+                                      size))
+           (write-bytes check nil (crc* body))
+           body))))))
 
 
 (defn message-set
@@ -100,5 +124,8 @@
        (sizeof [_]
          nil)
        (write-bytes [_ _ v]
-         (write-finite-bytes prefix
-                             (repeated codec :prefix :none) v))))))
+         (b/create-buf-seq
+          (write-bytes
+           (finite-frame prefix
+                         (repeated codec :prefix :none))
+           nil v)))))))

@@ -6,12 +6,10 @@
             [greta.serde :as serde]))
 
 (def my-message
-  {:crc 123
-   :magic-byte :zero
+  {:magic-byte :zero
    :attributes :none
    :key nil
    :value "HEY!"})
-
 
 (deftest message-test
   (is (round-trip?
