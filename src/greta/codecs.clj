@@ -93,16 +93,15 @@
 
     (response [_]
       (compile-frame
-       (ordered-map
-        :topics (repeated
-                 (ordered-map
-                  :topic-name p/string
-                  :messages (repeated
-                             (compile-frame
-                              (ordered-map :partition :int32
-                                           :error-code p/error
-                                           :highwater-mark-offset :int64
-                                           :message-set (messages/message-set serde)))))))))))
+       (repeated
+        (ordered-map
+         :topic-name p/string
+         :messages (repeated
+                    (compile-frame
+                     (ordered-map :partition :int32
+                                  :error-code p/error
+                                  :highwater-mark-offset :int64
+                                  :message-set (messages/message-set serde))))))))))
 
 
 
@@ -148,16 +147,15 @@
 
     (response [_]
       (compile-frame
-       (ordered-map
-        :topics (repeated
-                 (ordered-map
-                  :topic p/string
-                  :partitions (repeated
-                               (ordered-map
-                                :partition-id :int32
-                                :offset :int64
-                                :metadata p/string
-                                :error-code p/error)))))))))
+       (repeated
+        (ordered-map
+         :topic p/string
+         :partitions (repeated
+                      (ordered-map
+                       :partition-id :int32
+                       :offset :int64
+                       :metadata p/string
+                       :error-code p/error))))))))
 
 
 (defn offset-commit []
@@ -170,6 +168,7 @@
         :consumer-group-id p/string
         :consumer-group-generation-id :int32
         :consumer-id p/string
+        :retention-time :int64
         :topics (repeated
                  (ordered-map
                   :topic p/string
@@ -177,19 +176,17 @@
                                (ordered-map
                                 :partition-id :int32
                                 :offset :int64
-                                :timestamp :int64
                                 :metadata p/string)))))))
 
     (response [_]
       (compile-frame
-       (ordered-map
-        :topics (repeated
-                 (ordered-map
-                  :topic p/string
-                  :partitions (repeated
-                               (ordered-map
-                                :partition-id :int32
-                                :error-code p/error)))))))))
+       (repeated
+        (ordered-map
+         :topic p/string
+         :partitions (repeated
+                      (ordered-map
+                       :partition-id :int32
+                       :error-code p/error))))))))
 
 
 (defn group-coordinator []

@@ -74,7 +74,7 @@
     (is @(s/put! *conn* msg))
 
     (let [res @(s/try-take! *conn* ::drained 1000 ::timeout)
-          m (get-in res [:topics 0 :messages 0])]
+          m (get-in res [0 :messages 0])]
 
       (is (= :none (:error-code m)))
 
@@ -104,7 +104,7 @@
 
 (deftest offset-commit-test'
   (let [r {:header {:api-key :offset-commit
-                    :api-version 1
+                    :api-version 2
                     :correlation-id 1
                     :client-id "greta-test"}
            :consumer-group-id "my-group"
@@ -114,17 +114,15 @@
            :topics [{:topic "greta-tests"
                      :partitions [{:partition-id 0
                                    :offset 101
-                                   :timestamp (System/currentTimeMillis)
                                    :metadata "funky"}]}]}]
 
     @(s/put! *conn* r)
     (is (some #{(get-in @(s/try-take! *conn* 1000)
-                        [:topics 0 :partitions 0 :error-code])}
+                        [0 :partitions 0 :error-code])}
 
               [:illegal-generation
                :consumer-coordinator-not-available
-               :not-coordinator-for-consumer
-               ]))))
+               :not-coordinator-for-consumer]))))
 
 
 (deftest offset-fetch-test'
@@ -138,6 +136,6 @@
 
     @(s/put! *conn* r)
     (is (some #{(get-in @(s/try-take! *conn* 1000)
-                        [:topics 0 :partitions 0 :error-code])}
+                        [0 :partitions 0 :error-code])}
 
               [:none :not-coordinator-for-consumer]))))
