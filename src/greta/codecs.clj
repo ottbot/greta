@@ -240,6 +240,36 @@
                    :id p/string
                    :metadata p/bytes)))))))
 
+(defn sync-group []
+  (let [member-assignment (finite-frame
+                            :int32
+                            (ordered-map
+                             :version :int16
+                             :partition-assignment (repeated
+                                                    (ordered-map
+                                                     :topic p/string
+                                                     :partitions (repeated :int32)))
+                             :user-data p/bytes))]
+    (reify
+      KafkaApi
+      (request [_]
+        (compile-frame
+         (ordered-map
+          :group-id p/string
+          :generation-id :int32
+          :member-id p/string
+          :group-assignment (repeated
+                             (ordered-map
+                              :member-id p/string
+                              :member-assignment member-assignment)))))
+
+      (response [_]
+        (compile-frame
+         (ordered-map
+          :error-code p/error
+          :member-assignment member-assignment))))))
+
+
 (defn correlated-codecs
   "This ensures that responses are returned in order.
 
