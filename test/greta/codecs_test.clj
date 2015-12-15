@@ -117,9 +117,6 @@
     (is (round-trip? (response api) res))))
 
 
-
-
-
 (deftest produce-test
   (let [api (produce (serde/string-serde))
 
@@ -136,6 +133,44 @@
               :results [{:partition 0
                          :offset 123
                          :error-code :none}]}]]
+
+    (is (round-trip? (request api) req))
+    (is (round-trip? (response api) res))))
+
+
+(deftest group-coordinator-test
+  (let [api (group-coordinator)
+
+        req {:consumer-group "my-group"}
+
+        res {:error-code :none
+             :coordinator-id 10
+             :host "example.com"
+             :port 9092}]
+
+    (is (round-trip? (request api) req))
+    (is (round-trip? (response api) res))))
+
+
+(deftest join-group-test
+  (let [api (join-group)
+
+        req {:group-id "my-group"
+             :session-timeout 100
+             :member-id "my-member"
+             :protocol-type "consumer"
+             :group-protocols [{:protocol-name "my-proto"
+                                :protocol-metadata {:version 0
+                                                    :subscription ["dunno"]
+                                                    :user-data nil}}]}
+
+        res {:error-code :none
+             :generation-id 10
+             :group-protocol "my-proto"
+             :leader-id "wut"
+             :member-id "me"
+             :members [{:id "me"
+                        :metadata nil}]}]
 
     (is (round-trip? (request api) req))
     (is (round-trip? (response api) res))))

@@ -17,7 +17,7 @@
       (f))))
 
 
-(use-fixtures :once with-client )
+(use-fixtures :each with-client )
 
 
 (deftest client-test
@@ -122,7 +122,7 @@
 
               [:illegal-generation
                :consumer-coordinator-not-available
-               :not-coordinator-for-consumer]))))
+               :not-coordinator-for-group]))))
 
 
 (deftest offset-fetch-test'
@@ -138,4 +138,23 @@
     (is (some #{(get-in @(s/try-take! *conn* 1000)
                         [0 :partitions 0 :error-code])}
 
-              [:none :not-coordinator-for-consumer]))))
+              [:none :not-coordinator-for-group]))))
+
+
+(deftest join-group-test'
+  (let [r {:header {:api-key :join-group
+                    :api-version 0
+                    :correlation-id 1
+                    :client-id "greta-test"}
+
+           :group-id "my-group"
+           :session-timeout 100
+           :member-id ""
+           :protocol-type "consumer"
+           :group-protocols [{:protocol-name "dunno"
+                              :protocol-metadata {:version 0
+                                                  :subscription ["greta-tests"]
+                                                  :user-data nil}}]}]
+
+    @(s/put! *conn* r)
+    (is (= :not-coordinator-for-group (:error-code @(s/try-take! *conn* 1000 ))))))

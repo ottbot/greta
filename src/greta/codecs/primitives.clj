@@ -28,15 +28,16 @@
                   :metadata 3
                   :offset-commit 8
                   :offset-fetch 9
-                  :group-coordinator 10}))
+                  :group-coordinator 10
+                  :join-group 11}))
 
 (c/defcodec magic-byte
   (c/enum :byte {:zero 0}))
 
 (c/defcodec compression
   (c/enum :byte {:none 0
-               :gzip 1
-               :snappy 2}))
+                 :gzip 1
+                 :snappy 2}))
 
 (c/defcodec error
   (c/enum :int16 {:none 0
@@ -55,7 +56,7 @@
                   :offset-metadata-too-large 12
                   :offset-load-in-progress 14
                   :consumer-coordinator-not-available 15
-                  :not-coordinator-for-consumer 16
+                  :not-coordinator-for-group 16
                   :invalid-topic 17
                   :record-list-too-largee	18
                   :not-enough-replicas 19

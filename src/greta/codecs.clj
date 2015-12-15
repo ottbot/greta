@@ -207,7 +207,38 @@
         :port :int32)))))
 
 
+(defn join-group []
+  (reify
+    KafkaApi
+    (request [_]
+      (compile-frame
+       (ordered-map
+        :group-id p/string
+        :session-timeout :int32
+        :member-id p/string
+        :protocol-type p/string
+        :group-protocols (repeated
+                          (ordered-map
+                           :protocol-name p/string
+                           :protocol-metadata (finite-frame
+                                               :int32
+                                               (ordered-map
+                                                :version :int16
+                                                :subscription (repeated p/string)
+                                                :user-data p/bytes)))))))
 
+    (response [_]
+      (compile-frame
+       (ordered-map
+        :error-code p/error
+        :generation-id :int32
+        :group-protocol p/string
+        :leader-id p/string
+        :member-id p/string
+        :members (repeated
+                  (ordered-map
+                   :id p/string
+                   :metadata p/bytes)))))))
 
 (defn correlated-codecs
   "This ensures that responses are returned in order.
@@ -237,7 +268,9 @@
               :offset-fetch (offset-fetch)
               :group-coordinator (group-coordinator)
               :fetch (fetch serde)
-              :produce (produce serde)}]
+              :produce (produce serde)
+              :join-group (join-group)
+              }]
 
     (reify
 
