@@ -29,7 +29,8 @@
                   :offset-commit 8
                   :offset-fetch 9
                   :group-coordinator 10
-                  :join-group 11}))
+                  :join-group 11
+                  :sync-group 14}))
 
 (c/defcodec magic-byte
   (c/enum :byte {:zero 0}))

@@ -237,7 +237,7 @@
      :member-assignment member-assignment)))
 
 
-(defn correlated-codecs
+(defn correlated
   "This ensures that responses are returned in order.
 
   Note: you can only have up to 1000 pending requests until new
@@ -267,7 +267,7 @@
               :fetch (fetch serde)
               :produce (produce serde)
               :join-group (join-group)
-              }]
+              :sync-group (sync-group)}]
 
     (reify
 

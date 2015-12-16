@@ -28,7 +28,7 @@
 
     (fn [raw]
       (let [out (s/stream)
-            codec (codecs/correlated-codecs serde)]
+            codec (codecs/correlated serde)]
 
         (s/connect
          (s/map

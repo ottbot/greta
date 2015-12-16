@@ -157,4 +157,25 @@
                                                   :user-data nil}}]}]
 
     @(s/put! *conn* r)
-    (is (= :not-coordinator-for-group (:error-code @(s/try-take! *conn* 1000 ))))))
+    (is (= :not-coordinator-for-group
+           (:error-code @(s/try-take! *conn* 1000 ))))))
+
+
+(deftest sync-group-test'
+  (let [r {:header {:api-key :sync-group
+                    :api-version 0
+                    :correlation-id 0
+                    :client-id "greta-test"}
+
+           :group-id "my-group"
+           :generation-id 0
+           :member-id "my-member"
+           :group-assignment [{:member-id "my-member"
+                               :member-assignment {:version 0
+                                                   :partition-assignment [{:topic "greta-tests"
+                                                                          :partitions [0]}]
+                                                   :user-data nil}}]}]
+
+    @(s/put! *conn* r)
+    (is (= :not-coordinator-for-group
+           (:error-code @(s/try-take! *conn* 1000 ))))))
