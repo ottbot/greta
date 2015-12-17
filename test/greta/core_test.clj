@@ -74,9 +74,11 @@
       (let [res @(s/try-take! *conn* ::drained 1000 ::timeout)
             m (get-in res [0 :messages 0])]
 
-        (is (= :none (:error-code m)))
+        (is (contains?
+             #{:none :offset-out-of-range}
+             (:error-code m)))
 
-        (is (or (= 0 (:highwater-mark-offset m))
+        (is (or (> 1 (:highwater-mark-offset m))
                 (not-empty (:message-set m)))))))
 
 
@@ -115,12 +117,14 @@
                                      :metadata "funky"}]}]}]
 
       @(s/put! *conn* r)
-      (is (some #{(get-in @(s/try-take! *conn* 1000)
-                          [0 :partitions 0 :error-code])}
+      (is (contains?
 
-                [:illegal-generation
-                 :consumer-coordinator-not-available
-                 :not-coordinator-for-group]))))
+           #{:illegal-generation
+             :consumer-coordinator-not-available
+             :not-coordinator-for-group}
+
+           (get-in @(s/try-take! *conn* 1000)
+                   [0 :partitions 0 :error-code])))))
 
 
   (testing "offset-fetch"
@@ -133,10 +137,12 @@
                        :partitions [0]}]}]
 
       @(s/put! *conn* r)
-      (is (some #{(get-in @(s/try-take! *conn* 1000)
-                          [0 :partitions 0 :error-code])}
+      (is (contains?
 
-                [:none :not-coordinator-for-group]))))
+           #{:none :not-coordinator-for-group}
+
+           (get-in @(s/try-take! *conn* 1000)
+                   [0 :partitions 0 :error-code])))))
 
   (testing "join-group"
     (let [r {:header {:api-key :join-group
