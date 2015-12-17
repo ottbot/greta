@@ -159,20 +159,69 @@
               :metadata nil}]})
 
 
+(def member-assignment-example
+  {:version 0
+   :partition-assignment [{:topic "greta-tests"
+                           :partitions [0]}]
+   :user-data nil})
 
-(let [ms {:version 0
-          :partition-assignment [{:topic "greta-tests"
-                                  :partitions [0]}]
-          :user-data nil}]
 
-  (defapitest sync-group-test
-    (sync-group)
+(deftest member-assignment-test
+  (is (round-trip? member-assignment member-assignment-example)))
 
-    {:group-id "my-group"
-     :generation-id 0
-     :member-id "my-member"
-     :group-assignment [{:member-id "my-member"
-                         :member-assignment ms}]}
+(defapitest sync-group-test
+  (sync-group)
 
-    {:error-code :none
-     :member-assignment ms}))
+  {:group-id "my-group"
+   :generation-id 0
+   :member-id "my-member"
+   :group-assignment [{:member-id "my-member"
+                       :member-assignment member-assignment-example}]}
+
+  {:error-code :none
+   :member-assignment member-assignment-example})
+
+(defapitest heartbeat-test
+  (heartbeat)
+
+  {:group-id "my-group"
+   :generation-id 0
+   :member-id "my-member"}
+
+  :none)
+
+
+(defapitest leave-group-test
+  (leave-group)
+
+  {:group-id "my-group"
+   :member-id "my-member"}
+
+  :none)
+
+
+(defapitest list-groups-test
+  (list-groups)
+
+  nil
+
+  {:error-code :none
+   :groups [{:group-id "a-group"
+             :protocol-type "somesuch"}]})
+
+
+(defapitest describe-groups-test
+  (describe-groups)
+
+  {:group-ids ["group1"]}
+
+  [{:error-code :none
+    :group-id "group1"
+    :state "reasonable"
+    :protocol-type "somesuch"
+    :protocol "consumer"
+    :members [{:member-id "a member"
+               :client-id "greta-test"
+               :client-host "localhost"
+               :metadata nil
+               :member-assignment member-assignment-example}]}])

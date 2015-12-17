@@ -30,7 +30,11 @@
                   :offset-fetch 9
                   :group-coordinator 10
                   :join-group 11
-                  :sync-group 14}))
+                  :heartbeat 12
+                  :leave-group 13
+                  :sync-group 14
+                  :describe-groups 15
+                  :list-groups 16}))
 
 (c/defcodec magic-byte
   (c/enum :byte {:zero 0}))

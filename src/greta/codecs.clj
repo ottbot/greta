@@ -210,32 +210,80 @@
               :metadata p/bytes))))
 
 
-(let [member-assignment (finite-frame
-                         :int32
-                         (ordered-map
-                          :version :int16
-                          :partition-assignment (repeated
-                                                 (ordered-map
-                                                  :topic p/string
-                                                  :partitions (repeated :int32)))
-                          :user-data p/bytes))]
-
-  (defapi sync-group []
-
-    (ordered-map
-     :group-id p/string
-     :generation-id :int32
-     :member-id p/string
-     :group-assignment (repeated
-                        (ordered-map
-                         :member-id p/string
-                         :member-assignment member-assignment)))
+(defcodec member-assignment
+  (finite-frame
+   :int32
+   (ordered-map
+    :version :int16
+    :partition-assignment (repeated
+                           (ordered-map
+                            :topic p/string
+                            :partitions (repeated :int32)))
+    :user-data p/bytes)))
 
 
-    (ordered-map
-     :error-code p/error
-     :member-assignment member-assignment)))
+(defapi sync-group []
 
+  (ordered-map
+   :group-id p/string
+   :generation-id :int32
+   :member-id p/string
+   :group-assignment (repeated
+                      (ordered-map
+                       :member-id p/string
+                       :member-assignment member-assignment)))
+
+
+  (ordered-map
+   :error-code p/error
+   :member-assignment member-assignment))
+
+(defapi heartbeat []
+  (ordered-map
+   :group-id p/string
+   :generation-id :int32
+   :member-id p/string)
+
+  p/error)
+
+
+(defapi leave-group []
+  (ordered-map
+   :group-id p/string
+   :member-id p/string)
+
+  p/error)
+
+
+(defapi list-groups []
+  nil-frame
+
+  (ordered-map
+   :error-code p/error
+   :groups (repeated
+            (ordered-map
+             :group-id p/string
+             :protocol-type p/string))))
+
+
+(defapi describe-groups []
+  (ordered-map
+   :group-ids (repeated p/string))
+
+  (repeated
+   (ordered-map
+    :error-code p/error
+    :group-id p/string
+    :state p/string
+    :protocol-type p/string
+    :protocol p/string
+    :members (repeated
+              (ordered-map
+               :member-id p/string
+               :client-id p/string
+               :client-host p/string
+               :metadata p/bytes
+               :member-assignment member-assignment)))))
 
 (defn correlated
   "This ensures that responses are returned in order.
@@ -267,7 +315,11 @@
               :fetch (fetch serde)
               :produce (produce serde)
               :join-group (join-group)
-              :sync-group (sync-group)}]
+              :sync-group (sync-group)
+              :heartbeat (heartbeat)
+              :leave-group (leave-group)
+              :list-groups (list-groups)
+              :describe-groups (describe-groups)}]
 
     (reify
 
@@ -277,7 +329,6 @@
         (compile-frame
          (finite-frame
           :int32
-
           (header
            request-header
 
@@ -300,7 +351,6 @@
         (compile-frame
          (finite-frame
           :int32
-
           (header
            :int32 ;; correlation-id
 
