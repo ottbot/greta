@@ -12,204 +12,280 @@
   (response [t]))
 
 
-(defn metadata []
-  (reify
-    KafkaApi
 
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :topics (repeated p/string))))
+(defmacro defapi
+  "Defines an..."
+  [title signature request-frame response-frame]
 
-    (response [_]
-      (compile-frame
-       (ordered-map
-        :brokers (repeated
-                  (ordered-map
-                   :node-id :int32
-                   :host p/string
-                   :port :int32))
+  `(defn ~title ~signature
+     (reify
+       KafkaApi
+       (request [_]
+         (compile-frame ~request-frame))
+       (response [_]
+         (compile-frame ~response-frame)))))
 
-        :topics (repeated
+
+(defapi metadata []
+
+  (ordered-map
+   :topics (repeated p/string))
+
+  (ordered-map
+   :brokers (repeated
+             (ordered-map
+              :node-id :int32
+              :host p/string
+              :port :int32))
+
+   :topics (repeated
+            (ordered-map
+             :topic-error-code p/error
+             :topic-name p/string
+             :partition-metadata (repeated
+                                  (ordered-map
+                                   :partition-error-code p/error
+                                   :partition-id :int32
+                                   :leader :int32
+                                   :replicas (repeated :int32)
+                                   :isr (repeated :int32)))))))
+
+
+(defapi offset []
+
+  (ordered-map
+   :replica-id :int32
+   :topics (repeated
+            (ordered-map
+             :topic p/string
+             :partitions (repeated
+                          (ordered-map
+                           :partition :int32
+                           :time :int64
+                           :max-number-of-offsets :int32)))))
+
+  (repeated
+   (ordered-map
+    :topic p/string
+    :partitions (repeated
                  (ordered-map
-                  :topic-error-code p/error
-                  :topic-name p/string
-                  :partition-metadata (repeated
-                                       (ordered-map
-                                        :partition-error-code p/error
-                                        :partition-id :int32
-                                        :leader :int32
-                                        :replicas (repeated :int32)
-                                        :isr (repeated :int32))))))))))
+                  :partition :int32
+                  :error-code p/error
+                  :offsets (repeated :int64))))))
 
 
-(defn offset []
-  (reify
-    KafkaApi
+(defapi fetch [serde]
 
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :replica-id :int32
-        :topics (repeated
+  (ordered-map
+   :replica-id :int32
+   :max-wait-time :int32
+   :min-bytes :int32
+   :topics (repeated
+            (ordered-map
+             :topic p/string
+             :messages (repeated
+                        (ordered-map
+                         :partition :int32
+                         :fetch-offset :int64
+                         :max-bytes :int32)))))
+
+  (repeated
+   (ordered-map
+    :topic-name p/string
+    :messages (repeated
+               (compile-frame
+                (ordered-map :partition :int32
+                             :error-code p/error
+                             :highwater-mark-offset :int64
+                             :message-set (messages/message-set serde)))))))
+
+
+
+(defapi produce [serde]
+
+  (ordered-map
+   :required-acks :int16
+   :timeout :int32
+   :produce (repeated
+             (ordered-map
+              :topic p/string
+              :messages (repeated
+                         (ordered-map
+                          :partition :int32
+                          :message-set (messages/message-set serde))))))
+
+  (repeated
+   (ordered-map
+    :topic p/string
+    :results (repeated
+              (ordered-map
+               :partition :int32
+               :error-code p/error
+               :offset :int64)))))
+
+
+(defapi offset-fetch []
+
+  (ordered-map
+   :consumer-group p/string
+   :topics (repeated
+            (ordered-map
+             :topic p/string
+             :partitions (repeated :int32))))
+
+  (repeated
+   (ordered-map
+    :topic p/string
+    :partitions (repeated
                  (ordered-map
-                  :topic p/string
-                  :partitions (repeated
-                               (ordered-map
-                                :partition :int32
-                                :time :int64
-                                :max-number-of-offsets :int32)))))))
+                  :partition-id :int32
+                  :offset :int64
+                  :metadata p/string
+                  :error-code p/error)))))
 
-    (response [_]
-      (compile-frame
-       (repeated
-        (ordered-map
-         :topic p/string
-         :partitions (repeated
+
+(defapi offset-commit []
+
+  (ordered-map
+   :consumer-group-id p/string
+   :consumer-group-generation-id :int32
+   :consumer-id p/string
+   :retention-time :int64
+   :topics (repeated
+            (ordered-map
+             :topic p/string
+             :partitions (repeated
+                          (ordered-map
+                           :partition-id :int32
+                           :offset :int64
+                           :metadata p/string)))))
+
+  (repeated
+   (ordered-map
+    :topic p/string
+    :partitions (repeated
+                 (ordered-map
+                  :partition-id :int32
+                  :error-code p/error)))))
+
+
+(defapi group-coordinator []
+
+  (ordered-map
+   :consumer-group p/string)
+
+  (ordered-map
+   :error-code p/error
+   :coordinator-id :int32
+   :host p/string
+   :port :int32))
+
+
+(defapi join-group []
+
+  (ordered-map
+   :group-id p/string
+   :session-timeout :int32
+   :member-id p/string
+   :protocol-type p/string
+   :group-protocols (repeated
+                     (ordered-map
+                      :protocol-name p/string
+                      :protocol-metadata (finite-frame
+                                          :int32
+                                          (ordered-map
+                                           :version :int16
+                                           :subscription (repeated p/string)
+                                           :user-data p/bytes)))))
+
+  (ordered-map
+   :error-code p/error
+   :generation-id :int32
+   :group-protocol p/string
+   :leader-id p/string
+   :member-id p/string
+   :members (repeated
+             (ordered-map
+              :id p/string
+              :metadata p/bytes))))
+
+
+(defcodec member-assignment
+  (finite-frame
+   :int32
+   (ordered-map
+    :version :int16
+    :partition-assignment (repeated
+                           (ordered-map
+                            :topic p/string
+                            :partitions (repeated :int32)))
+    :user-data p/bytes)))
+
+
+(defapi sync-group []
+
+  (ordered-map
+   :group-id p/string
+   :generation-id :int32
+   :member-id p/string
+   :group-assignment (repeated
                       (ordered-map
-                       :partition :int32
-                       :error-code p/error
-                       :offsets (repeated :int64)))))))))
+                       :member-id p/string
+                       :member-assignment member-assignment)))
 
 
-(defn fetch [serde]
-  (reify
-    KafkaApi
+  (ordered-map
+   :error-code p/error
+   :member-assignment member-assignment))
 
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :replica-id :int32
-        :max-wait-time :int32
-        :min-bytes :int32
-        :topics (repeated
-                 (ordered-map
-                  :topic p/string
-                  :messages (repeated
-                             (ordered-map
-                              :partition :int32
-                              :fetch-offset :int64
-                              :max-bytes :int32)))))))
+(defapi heartbeat []
+  (ordered-map
+   :group-id p/string
+   :generation-id :int32
+   :member-id p/string)
 
-    (response [_]
-      (compile-frame
-       (repeated
-        (ordered-map
-         :topic-name p/string
-         :messages (repeated
-                    (compile-frame
-                     (ordered-map :partition :int32
-                                  :error-code p/error
-                                  :highwater-mark-offset :int64
-                                  :message-set (messages/message-set serde))))))))))
+  p/error)
 
 
+(defapi leave-group []
+  (ordered-map
+   :group-id p/string
+   :member-id p/string)
 
-(defn produce [serde]
-  (reify
-    KafkaApi
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :required-acks :int16
-        :timeout :int32
-        :produce (repeated
-                  (ordered-map
-                   :topic p/string
-                   :messages (repeated
-                              (ordered-map
-                               :partition :int32
-                               :message-set (messages/message-set serde))))))))
-    (response [_]
-      (compile-frame
-       (repeated
-        (ordered-map
-         :topic p/string
-         :results (repeated
-                   (ordered-map
-                    :partition :int32
-                    :error-code p/error
-                    :offset :int64))))))))
+  p/error)
 
 
-(defn offset-fetch []
-  (reify
-    KafkaApi
+(defapi list-groups []
+  nil-frame
 
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :consumer-group p/string
-        :topics (repeated
-                 (ordered-map
-                  :topic p/string
-                  :partitions (repeated :int32))))))
-
-    (response [_]
-      (compile-frame
-       (repeated
-        (ordered-map
-         :topic p/string
-         :partitions (repeated
-                      (ordered-map
-                       :partition-id :int32
-                       :offset :int64
-                       :metadata p/string
-                       :error-code p/error))))))))
+  (ordered-map
+   :error-code p/error
+   :groups (repeated
+            (ordered-map
+             :group-id p/string
+             :protocol-type p/string))))
 
 
-(defn offset-commit []
-  (reify
-    KafkaApi
+(defapi describe-groups []
+  (ordered-map
+   :group-ids (repeated p/string))
 
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :consumer-group-id p/string
-        :consumer-group-generation-id :int32
-        :consumer-id p/string
-        :retention-time :int64
-        :topics (repeated
-                 (ordered-map
-                  :topic p/string
-                  :partitions (repeated
-                               (ordered-map
-                                :partition-id :int32
-                                :offset :int64
-                                :metadata p/string)))))))
+  (repeated
+   (ordered-map
+    :error-code p/error
+    :group-id p/string
+    :state p/string
+    :protocol-type p/string
+    :protocol p/string
+    :members (repeated
+              (ordered-map
+               :member-id p/string
+               :client-id p/string
+               :client-host p/string
+               :metadata p/bytes
+               :member-assignment member-assignment)))))
 
-    (response [_]
-      (compile-frame
-       (repeated
-        (ordered-map
-         :topic p/string
-         :partitions (repeated
-                      (ordered-map
-                       :partition-id :int32
-                       :error-code p/error))))))))
-
-
-(defn group-coordinator []
-  (reify
-    KafkaApi
-
-    (request [_]
-      (compile-frame
-       (ordered-map
-        :consumer-group p/string)))
-
-    (response [_]
-      (compile-frame
-       (ordered-map
-        :error-code p/error
-        :coordinator-id :int32
-        :host p/string
-        :port :int32)))))
-
-
-
-
-(defn correlated-codecs
+(defn correlated
   "This ensures that responses are returned in order.
 
   Note: you can only have up to 1000 pending requests until new
@@ -237,7 +313,13 @@
               :offset-fetch (offset-fetch)
               :group-coordinator (group-coordinator)
               :fetch (fetch serde)
-              :produce (produce serde)}]
+              :produce (produce serde)
+              :join-group (join-group)
+              :sync-group (sync-group)
+              :heartbeat (heartbeat)
+              :leave-group (leave-group)
+              :list-groups (list-groups)
+              :describe-groups (describe-groups)}]
 
     (reify
 
@@ -247,7 +329,6 @@
         (compile-frame
          (finite-frame
           :int32
-
           (header
            request-header
 
@@ -270,7 +351,6 @@
         (compile-frame
          (finite-frame
           :int32
-
           (header
            :int32 ;; correlation-id
 

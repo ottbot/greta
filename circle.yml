@@ -9,9 +9,9 @@ dependencies:
         background: true
     - ./ci-kafka.sh start-kafka:
         background: true
-    - sleep 30
+    - sleep 10
     - ./ci-kafka.sh create-test-topic
-    - sleep 5
+    - sleep 10
     - ./ci-kafka.sh publish-to-test-topic
 
   cache_directories:

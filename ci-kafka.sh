@@ -56,7 +56,15 @@ case "$1" in
         ;;
 
     *)
-        echo "noop"
+        echo "Hey, you can do it!"
+        echo "-------------------"
+        echo " setup                    Install kafka and zk in ./kafka_dist"
+        echo " start-zk                 Start Zookeeper"
+        echo " start-kafka              Start Kafka"
+        echo " start                    Start Kafka and Zookeeper"
+        echo " stop                     Stop Kafka and Zookeeper"
+        echo " create-test-topic        Create 'greta-tests' topic"
+        echo " publish-to-test-topic    Publish a messages to 'greta-tests'"
         exit 1
         ;;
 esac
