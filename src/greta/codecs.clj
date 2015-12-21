@@ -14,7 +14,7 @@
 
 
 (defmacro defapi
-  "Defines an..."
+  "Given a request and response frames, implements a KafkaApi."
   [title signature request-frame response-frame]
 
   `(defn ~title ~signature
