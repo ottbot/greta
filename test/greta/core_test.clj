@@ -15,44 +15,13 @@
         (f)))) )
 
 
+(deftest metadata-test
+  (is (every?
+       @(metadata *conn* "greta-tests")
+       [:brokers :topics])))
 
 (deftest client-test
   ;; As higher-level client fn are added, these tests can be removed.
-  (testing "metadata"
-    (let [msg {:header {:api-key :metadata
-                        :api-version 0
-                        :client-id "greta"}
-
-               :topics []}]
-
-      (is @(s/put! *conn* msg))
-      (is (every? @(s/take! *conn*)
-                  [:brokers :topics]))))
-
-
-  (testing "produce"
-    (let [msg {:header {:api-key :produce
-                        :api-version 0
-                        :correlation-id 0
-                        :client-id "greta-test"}
-
-               :required-acks 1
-               :timeout 1000
-               :produce [{:topic "greta-tests"
-                          :messages [{:partition 0
-                                      :message-set [{:offset 0
-                                                     :message {:magic-byte :zero
-                                                               :attributes :none
-                                                               :key ""
-                                                               :value "see you on the other side!"}}]}]}]}]
-
-
-      (is @(s/put! *conn* msg))
-      (is (= :none
-             (get-in
-              @(s/take! *conn*)
-              [0 :results 0 :error-code])))))
-
 
   (testing "fetch"
     (let [msg {:header {:api-key :fetch
