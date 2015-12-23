@@ -21,63 +21,66 @@
     (partition-id [_ _] n)))
 
 
+
 (defn leader-pool
   "Given a bootstrap broker address and a topic, returns a map of
   connections for each partition leader"
+  ([host port topic serde]
+   (leader-pool (c/client host port) topic serde))
 
-  [host port topic serde]
+  ([bootstrap-connection topic serde]
 
-  (d/loop [attempt 1
-           connection (c/client host port)]
+   (d/loop [attempt 1
+            connection bootstrap-connection]
 
-    (d/chain
+     (d/chain
 
-     connection
+      connection
 
-     (fn [conn]
-       (c/metadata conn topic))
+      (fn [conn]
+        (c/metadata conn topic))
 
-     (fn [m]
-       (let [topic-meta (get-in m [:topics 0])
-             brokers (get-in m [:brokers])]
+      (fn [m]
+        (let [topic-meta (get-in m [:topics 0])
+              brokers (get-in m [:brokers])]
 
-         (if (= :none (:topic-error-code topic-meta))
+          (if (= :none (:topic-error-code topic-meta))
 
-           [(map #(c/client (:host %)
-                            (:port %)
-                            serde)
-                 (sort-by :node-id brokers))
+            [(map #(c/client (:host %)
+                             (:port %)
+                             serde)
+                  (sort-by :node-id brokers))
 
-            (sort-by :partition-id
-                     (:partition-metadata topic-meta))]
+             (sort-by :partition-id
+                      (:partition-metadata topic-meta))]
 
-           (throw (Exception. "Topic error:"
-                              (str (:topic-error-code topic-meta)))))))
+            (throw (ex-info "Topic error"
+                            {:topic-metadata topic-meta})))))
 
-     (fn [[brokers partitions]]
+      (fn [[brokers partitions]]
 
-       (let [errors (map :partition-error-code partitions)
-             leaders (map :leader partitions)]
+        (let [errors (map :partition-error-code partitions)
+              leaders (map :leader partitions)]
 
-         (cond
-           (not-every? #(= :none %) errors)
-           (throw (Exception. "Partition errors" (str errors)))
+          (cond
+            (not-every? #(= :none %) errors)
+            (throw (ex-info "Partition error"
+                            {:partition-metadata partitions}))
 
-           (some #(= -1 %) leaders)
-           (if (> attempt 10)
-             (throw (Exception. "Rebalance is taking too long."))
-             (do
-               (log/info "Brokers are rebalancing, attempt" attempt)
-               (Thread/sleep 200)
-               (d/recur (inc attempt)
-                        connection)))
+            (some #(= -1 %) leaders)
+            (if (> attempt 10)
+              (throw (ex-info "Rebalance timeout"
+                              {:partition-metadata partitions}))
+              (do
+                (log/info "Brokers are rebalancing, attempt" attempt)
+                (Thread/sleep 200)
+                (d/recur (inc attempt)
+                         connection)))
 
-           :else
-           (do
-             (.close @connection)
-             (mapv #(nth brokers %) leaders))))))))
-
-
+            :else
+            (do
+              (.close @connection)
+              (mapv #(nth brokers %) leaders)))))))))
 
 
 (defn stream
