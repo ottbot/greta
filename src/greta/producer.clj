@@ -5,28 +5,37 @@
             [manifold.deferred :as d]
             [manifold.stream :as s]))
 
-
-;; Kinds of partitionining to support:
-;; - constant
-;; - round-robin around parition count
-;; - key based modulo around partition count
-
-;; This protocol is WIP
 (defprotocol Partitioner
-  (partition-id [this m]))
+  "Used to define strategies to define which parition a message should
+  be places. "
+  (next-id [this connections message]))
 
-(defn constant-partitioner [n]
+(defn constant-partitioner [x]
   (reify
     Partitioner
-    (partition-id [_ _] n)))
+    (next-id [_ _ _] x)))
+
+(defn random-parititioner []
+  (reify
+    Partitioner
+    (next-id [_ _ conns]
+      (rand-int (count conns)))))
+
+(defn round-robin-partitioner []
+  (let [prev (atom -1)]
+    (reify
+      Partitioner
+      (next-id [_ _ conns]
+        (swap! prev #(mod (inc %)
+                          (count conns)))))))
 
 
 
-(defn leader-pool
+(defn leader-connections
   "Given a bootstrap broker address and a topic, returns a map of
   connections for each partition leader"
   ([host port topic serde]
-   (leader-pool (c/client host port) topic serde))
+   (leader-connections (c/client host port) topic serde))
 
   ([bootstrap-connection topic serde]
 
@@ -82,6 +91,8 @@
               (.close @connection)
               (mapv #(nth brokers %) leaders)))))))))
 
+(defn key-base-partitioner []
+  (throw (Exception. "not implemented")))
 
 (defn stream
   "A producer stream. Put messages on the resulting stream."
@@ -92,7 +103,7 @@
                              acks
                              timeout]
 
-                      :or {partitioner (constant-partitioner 0)
+                      :or {partitioner (round-robin-partitioner)
                            serde (serde/string-serde)
                            keyfn nil
                            acks 1
@@ -100,7 +111,7 @@
 
 
 
-  (let [pool @(leader-pool host port topic serde)
+  (let [pool @(leader-connections host port topic serde)
         topic (name topic)
         messages (s/stream)
         results (s/stream)]
@@ -123,7 +134,7 @@
              (assoc {:offset 0} :message)
              (conj [])
 
-             (assoc {:partition (partition-id partitioner v)}
+             (assoc {:partition (next-id partitioner v pool)}
                     :message-set)
              (conj [])
 

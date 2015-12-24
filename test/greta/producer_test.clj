@@ -16,7 +16,7 @@
       in
       (s/->source (repeat v))))))
 
-(deftest leader-pool-test
+(deftest leader-connections-test
   (let [pool-with #(-> {:brokers [{:node-id 0
                                    :host "localhost"
                                    :port 9092}
@@ -31,7 +31,7 @@
 
                        (assoc-in [:topics 0 :partition-metadata] %)
                        dummy
-                       (leader-pool "greta-tests" (serde/string-serde)))]
+                       (leader-connections "greta-tests" (serde/string-serde)))]
 
 
     (testing "where each partition has the same leader"
@@ -88,17 +88,18 @@
     (is (thrown-with-msg?
          Exception
          #"Topic error"
-         @(leader-pool
+         @(leader-connections
            (dummy {:topics [{:topic-error-code :bad-stuff}]})
            "greta-tests" (serde/string-serde)))))
 
 
-  (testing "a real connection"
+  (testing "with real requests"
     (is (not-empty
-         @(leader-pool "localhost"
-                       9092
-                       "greta-tests"
-                       (serde/string-serde))))))
+         @(leader-connections
+           "localhost"
+           9092
+           "greta-tests"
+           (serde/string-serde))))))
 
 (deftest stream-test
   (with-open [p (stream "localhost" 9092 "greta-tests")]
