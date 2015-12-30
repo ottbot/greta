@@ -2,18 +2,21 @@
   (:require [clojure.test :refer :all]
             [greta.core :refer :all]
             [greta.serde :as serde]
+            [greta.test-utils :as utils]
             [manifold.stream :as s]))
-
 
 
 (def ^:dynamic *conn* nil)
 
-(use-fixtures :once
-  (fn [f]
-    (with-open [c @(client "localhost" 9092 (serde/string-serde))]
-      (binding [*conn* c]
-        (f)))) )
+(defn with-conn [f]
+  (with-open [c @(client utils/kafka-host
+                         utils/kafka-port
+                         (serde/string-serde))]
+    (binding [*conn* c]
+      (f))))
 
+
+(use-fixtures :once with-conn)
 
 (deftest metadata-test
   (is (every?

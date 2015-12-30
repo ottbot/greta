@@ -3,9 +3,9 @@
             [greta.core :as c]
             [greta.producer :refer :all]
             [greta.serde :as serde]
+            [greta.test-utils :as utils]
             [manifold.deferred :as d]
             [manifold.stream :as s]))
-
 
 (defn dummy [v]
   (let [in (s/stream)]
@@ -95,14 +95,15 @@
 
   (testing "with real requests"
     (is (not-empty
-         @(leader-connections
-           "localhost"
-           9092
-           "greta-tests"
-           (serde/string-serde))))))
+         @(leader-connections utils/kafka-host
+                              utils/kafka-port
+                              "greta-tests"
+                              (serde/string-serde))))))
 
 (deftest stream-test
-  (with-open [p (stream "localhost" 9092 "greta-tests")]
+  (with-open [p (stream utils/kafka-host
+                        utils/kafka-port
+                        "greta-tests")]
 
     (dotimes [_ 5]
       (s/put! p "hello" ))

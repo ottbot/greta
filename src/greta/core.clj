@@ -10,7 +10,6 @@
 (def client-name (or (System/getenv "GRETA_CLIENT_NAME")
                      "greta-tests"))
 
-
 (defn client
   "Get an Aleph TCP client to perform Kafka API requests.
 

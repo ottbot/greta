@@ -17,25 +17,24 @@
                                   :topics [topic]})]
 
       (d/chain
+
        (s/take! c ::drained)
 
        (fn [r]
          (if (= r ::drained)
-           "ERROR: Connection closed."
+           (throw (Exception. "Connection closed"))
+           (do (println r)
+               (if-let [pm (get-in r [:topics 0 :partition-metadata])]
 
-           (if-let [pm (get-in r [:topics 0 :partition-metadata])]
+                 (or (some->> pm
+                              (filter #(= (:partition-id %) partition-id))
+                              first
+                              :leader
+                              (nth (:brokers r)))
 
-             (or (some->> pm
-                          (filter #(= (:partition-id %) partition-id))
-                          first
-                          :leader
-                          (nth (:brokers r)))
+                     (throw (ex-info "Partition not found" r)))
 
-                 "ERROR: Partition not found")
-
-             (str "ERROR: Kafka error: "
-                  (name
-                   (get-in r [:topics 0 :topic-error-code]))))))
+                 (throw (ex-info "Kafka error" r))))))
 
        (fn [r]
          (.close c)
