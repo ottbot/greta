@@ -9,7 +9,11 @@ Development targets Kafka 0.9.0+.
 
 ## Usage
 
-FIXME
+### Producers:
+
+````clojure
+
+````
 
 ## Contributing
 
