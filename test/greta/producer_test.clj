@@ -110,3 +110,13 @@
 
     (is (< (map :offset
                 (s/stream->seq p 1000))))))
+
+
+
+(with-open [p (stream "localhost" 9092 "example-topic")]
+
+  (dotimes [_ 5]
+    (s/put! p "hello" ))
+
+  (is (< (map :offset
+              (s/stream->seq p 1000)))))
